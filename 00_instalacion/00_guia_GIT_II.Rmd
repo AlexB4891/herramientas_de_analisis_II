@@ -49,7 +49,7 @@ git add archivo_ejemplo.ext # Si quieres agregar al control de cambios un solo a
 
 git commit -m "Mensaje corto sobre la actualización"
 
-git push push origin master
+git push origin master
 ```
 
 10. Revisamos en github que se hayan guardado las acciones realizadas.
