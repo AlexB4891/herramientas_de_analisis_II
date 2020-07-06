@@ -1,0 +1,55 @@
+---
+title: "Breve Guia GIT"
+author: "Alex Bajaña"
+date: "12/9/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+1. Instalar [GIT](https://git-scm.com/downloads)
+2. Crear una cuenta en [GitHub](https://github.com)
+3. Confirma el mail
+4. Fork el repositorio que deseas
+6. Abre el CMD e ingresa los siguiente comandos:
+
+```{r eval=F}
+
+git config --global user.email "you@youremail.com" # mismo con el que creaste tu cuenta de github
+
+git config --global user.name "Your Name" # Nombre con el que quieres que se reconozcan tus cambios
+
+```
+
+5. Clonas el repositorio en el que quieres trabajar
+
+```{r eval = F}
+
+git clone https://github.com/LabSocRep/Fichas_Metodologicas.git
+
+```
+
+**Ojo:** Se creara una carpeta con el nombre del repositorio en el directorio que este abierto, por default es *Mis documentos*
+6. Haces tu trabajo en la carpeta (modificar, guardar archivos de todo tipo)
+7. Una vez que estas listo es hora de subir al repositorio
+8. En el CMD nos ubicamos en la carpeta/repositorio local
+
+```{r, eval = F}
+cd repositorioClonado
+```
+
+9. Corremos los siguientes comandos:
+
+```{r eval =F}
+git add * # Si quieres que todos los archivos sean evaluados
+
+git add archivo_ejemplo.ext # Si quieres agregar al control de cambios un solo archivo  
+
+git commit -m "Mensaje corto sobre la actualización"
+
+git push push origin master
+```
+
+10. Revisamos en github que se hayan guardado las acciones realizadas.

@@ -1,0 +1,63 @@
+---
+title: "00 Instalación"
+author: "Alex Bajaña"
+date: "18/5/2020"
+fontfamily: arev
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+header-includes:
+  - \usepackage{titling}
+  - \usepackage{fancyhdr}
+  - \pagestyle{fancy}
+---
+
+Bienvenidos al curso Herramientas de análisis con R. Durante 4 semanas vamos a revisar el maravilloso mundo del ambiente de programación R. Antes de empezar quiero explicar por que uso la palabra *ambiente* y no solo lenguaje de programación. Alrededor del globo cada vez más usuarios se suman al uso y aporte de nuevos elementos a este lenguaje de programación, dándole la propiedad de ser un elemento vivo que se nutre de múltiples esfuerzos individuales. Hace poco RStudio paso a ser una *Public Benefit Corporation* haciendo denotar una de las propiedades fundamentales de los proyectos de código abierto como es R: estar al servicio de la gente en cualquier rincón del mundo sin importar sus recursos o características, en este sentido este es un ambiente inclusivo y de gran potencia para la generación de una sociedad más justa. 
+
+Tras este breve preámbulo, es necesario decir que no existe solo una manera para aprender R. Existen medios remotos como lo son *RStudio Cloud*, que requiere únicamente de una conexión de internet y otros locales como los que se van a utilizar en este curso. Aquí se describirá una breve guía de los recursos necesarios para la realización del curso, además de un gran aliado como lo es GIT.
+
+# Instalación de R-Base
+
+Iniciamos con la instalación de R básico, está instalación basta para nuestros propósitos, sin embargo hoy en día tenemos a disposición el maravilloso IDE de RStudio que nos ayuda a que la curva de aprendizaje sea más ligera para los aprendices. 
+
+Para instalar R- Base es necesario saber si nuestro computador es de 32 o 64 bits. Vamos a acceder al siguiente enlace:
+
+https://cran.r-project.org/bin/windows/base/R-4.0.2-win.exe
+
+Que nos dará la descarga de un archivo `.exe`, una vez descargado empezamos la instalación. 
+
+* Primero deberemos elegir el lenguaje de preferencia
+* Aceptamos los terminos y condiciones
+* Elegimos la ruta en la que se guardará el programa
+* Elegimos que componentes deben ser instalados (se recomienda dejar todas las opciones activas)
+* Elegimos aceptar todas estas configuraciones
+* Elegimos el tipo de display (se recomienda la establecida por default)
+* Elegimos ayuda HTML para los textos auxiliares
+* Elegimos una ruta para las librerías y si se desea una carpeta en el menú de inicio (se recomienda dejar las opciones por default)
+* Por ultimo algunas alternativas adicionales como son la creación de una acceso rápido y la posibilidad de guardar un registro de varias versiones de R (en esta ultima se recomienda mantener un historial por motivos de reproducibilidad)
+
+Con eso concluye el proceso de instalación esperamos unos minutos y tendremos listo nuestro programa.
+
+# Instalación de RStudio
+
+Como se mencionó el IDE de RStudio es una herramienta potentisima que ayuda al usuario en el aprendizaje y eficiencia a la hora de trabajar gracias a la centralización de recursos que se describirán a lo largo del curso. Para su instalación vamos al siguiente enlace:
+
+https://download1.rstudio.org/desktop/windows/RStudio-1.3.959.exe
+
+Seguimos la configuración por default para la ruta de instalación, salvo que se desee instalar en un directorio especifico, lo cual no se recomienda debido a que el programa intentará instalar dependencias a partir de la ruta que eleijamos. Con ello procedemos a la instalación.
+
+
+# Instalación de GIT
+
+Por último y no menos importante vamos a proceder a la instalación de GIT, un sistema de control de versiones que facilitará la transferencia, organización y registro de los materiales que se puedan generar no solo en el curso, sino en la actividad diaria usando cualquier lenguaje de programación como python, nodejs, etc. Para ello visitamos el enlace:
+
+https://git-scm.com/downloads
+
+Seguimos los pasos de instalación dejando las opciones dadas por default. Una vez instalado es necesaria una breve configuración de usuario. Para ello será necesario seguir la guia de GIT que se pone a disposición del estudiante.
+
+Con esto concluyen nuestros primeros pasos para el curso, por 20 días estos serán nuestros aliados en el aprendizaje y en un futuro en el trabajo. 
+
+
+
+

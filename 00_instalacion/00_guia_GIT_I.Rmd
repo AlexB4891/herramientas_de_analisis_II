@@ -1,0 +1,79 @@
+---
+title: "GUIA GIT"
+author: "Alex Bajaña"
+date: "11/11/2019"
+output: html_document
+---
+
+Para cargar las presentaciones en Github seguir los siguientes pasos:
+
+1. Crear un repositorio en GitHub
+2. Ingresar en la carpeta en la que estoy trabjando y desde la terminal escribir la sentencia:
+
+```{r, eval = FALSE}
+git init
+```
+
+3. Añado la dirección del repositorio remoto
+
+```{r, eval = FALSE}
+
+git remote add origin https://github.com/alexvbr22082018/R_tools_with_R_class_1/
+```
+
+4. Añado todos los archivos al control de versiones
+
+```{r, eval = FALSE}
+git add .
+```
+
+5. Hago un commit 
+
+```{r, eval = FALSE}
+git commit -m "Esta es la primera entrega"
+```
+
+6. Integro el contenido de mi carpeta con el del repositorio:
+
+```{r, eval = FALSE}
+git pull origin master --allow-unrelated-histories
+```
+
+7. Envio mis archivos al repositorio remoto:
+
+```{r, eval = FALSE}
+git push origin master
+```
+
+8.  Para crear Rmarkdwon en la web:
+
+```{r, eval = FALSE}
+# Abrir CMD como administrador
+# ubicarse en la carpeta
+mlink "index.nb.html" "index.html"
+```
+
+9. Crear una nueva branch
+
+```{r, eval = FALSE}
+
+git branch nombre_branch
+
+```
+
+10. Pasar a esa branch 
+
+```{r, eval = FALSE}
+git chekout nombre_branch
+```
+
+11. Subir los elementos a esa branch
+
+```{r, eval = FALSE}
+git push -u origin nombre_branch
+```
+
+
+
+
+
