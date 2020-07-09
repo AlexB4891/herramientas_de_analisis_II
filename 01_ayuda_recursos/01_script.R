@@ -19,9 +19,20 @@ help.search("normal distribution")
 
 ## Buscar ayuda sobre una función:
 
-help(rnorm)
+help(fitted)
 
 # Clase 1: Environments ---------------------------------------------------
 
 
 .packages()
+    
+## Viñetas
+# Buscar disponibles:
+
+vignete()
+
+# Y cuadno encuentras una del que tema que buscas:
+
+vignette("dplyr")
+
+
