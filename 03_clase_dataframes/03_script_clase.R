@@ -148,14 +148,83 @@ CIIU <- read_excel("03_clase_dataframes/CIIU.xls",  skip = 1)
 
 # Extraer la pimera y segunda columna
 
+
+
+nombres_df <- colnames(CIIU)
+
+# tamaño del vector:
+
+length(nombres_df)
+
+nuevos_nombres <- c("codigo","descripcion","nivel","codigo_2","descripcion_2","nivel_2")
+
+length(nuevos_nombres)
+
+colnames(CIIU) <- nuevos_nombres
+
+colnames(CIIU)
+# Ver la tabla:
+
+View(CIIU)
+
+
+# Modificacion por posicion:
+
+colnames(CIIU)[c(3,6)]
+
+colnames(CIIU)[c(3,6)] <- c("nivel_a","nivel_b")
+
+
+y[c(6,8)] <- 0
+
+y[y == 0]
+
+y[c(6,8)] <- c(99,00)
+
+
+y[y >10] <- y[y >10] -5
+
+
+
+# Subset de un data frame:
+
+# Extraigo columna como vector:
+
+CIIU$codigo
+
+
+# Extraigo columna como tabla:
+CIIU[,1]
+
+CIIU[,"codigo"]
+
+
+posiciones <- grep(x = CIIU$descripcion,pattern = "chocolate")
+
+
+CIIU[ posiciones , ]
+
+logica <- grepl(x = CIIU$descripcion,pattern = "llantas")
+
+sum(logica)
+
+View(CIIU[ logica , ])
+
 # Vector con distribución normal con media 500000 y desviación 800 con el tamaño 
 # del numero de filas de ciiu
 
+ventas_agregadas <- rnorm(n = nrow(CIIU),mean = 500000,sd = 8000)
+
+# Crear columnas en el dataframe:
+
+CIIU$ventas_agregadas <- ventas_agregadas
+
+mayores_5 <- CIIU$ventas_agregadas >= 500000
+
+CIIU[mayores_5,]
 
 
+# A la vez:
 
-
-
-
-
+CIIU[mayores_5, c("descripcion","nivel_a")]
 
