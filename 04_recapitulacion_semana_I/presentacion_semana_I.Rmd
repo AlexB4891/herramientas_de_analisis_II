@@ -1,0 +1,430 @@
+---
+title: "Curso herramientas de análisis con R"
+subtitle: "Clase 5: Elementos básicos de R (Recapitulación)"
+author: "Alex Bajaña"
+institute: "infoRmal"
+date: "2020/07/14 (Actualizado: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+
+```{r packages, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(DT)
+```
+
+## Atómicos
+
+La unidad elemental en R es el vector. En un vector es una colección de unicamente un solo tipo o clase:
+
+* **logical**
+* **double**
+* **integer**
+* **character**
+* **lists**
+---
+
+## S3
+
+* **Dates**
+* **PosixLt/PosixCt**
+* **Factor**
+
+Los tipos S3 tienen **atributos** transforman los valores atómicos que permiten cubrir una amplia gama de tipos de datos. Por ejemplo una matriz es un vector que posee el atributo `dim`.
+
+---
+
+## Logical & character
+
+**logical** Toma los valores de verdadero o false, usualmente resultado de un operador lógico.
+
+```{r}
+typeof(TRUE)
+```
+
+**character** - Cadenas que contienen combinaciones de números y letras (Más grande, más memoria)
+
+```{r}
+typeof("hello")
+typeof('world') # Generalmente se usan dobles comillas
+```
+
+---
+
+## Double & integer
+
+**double** - Valores númericos
+
+```{r}
+typeof(1.335)
+typeof(7)
+```
+
+**integer** - Enteros
+
+```{r}
+typeof(7L)
+typeof(1:3)
+```
+
+---
+
+## Lists
+
+**Lists** Si en los vectores no se pueden guardar elementos de distintos tipos, en las listas **Sí**
+
+.small[
+```{r}
+mylist <- list("A", 1:4, c(TRUE, FALSE), (1:4)/2)
+mylist
+```
+}
+
+---
+
+.small[
+```{r}
+str(mylist)
+```
+]
+
+---
+
+## Estructuras más completas
+
+* **Listas nombradas:** Permiten un acceso más facil a los elementos de una lista.
+
+.small[
+```{r, eval  FALSE}
+vertigo <- list(A = c(1:3,c(18:15)), B = "Chinchinal", "elemento 1" = "cosa")
+str(vertigo)
+names(vertigo)
+
+```
+]
+
+Los vectores tambien pueden ser normbrados.
+---
+
+.small[
+
+```{r}
+vertigo$B
+vertigo[["B"]]
+vertigo[1]
+```
+
+
+]
+
+Matrices y arrays tienen 2 o más dimensiones.
+---
+
+## Concatenación
+
+Dependiendo de la estructura que se maneje tenemos las siguientes funciones que permiten revisar los principales atributos (no efimeros) de los objetos:
+
+```{r, echo=FALSE}
+
+tibble::tribble(
+            ~Vector,                  ~Matrix,           ~Array,
+          "names()", "rownames(), colnames()",     "dimnames()",
+         "length()",         "nrow(), ncol()",          "dim()",
+              "c()",       "rbind(), cbind()", "abind::abind()",
+                "—",                    "t()",        "aperm()",
+  "is.null(dim(x))",            "is.matrix()",     "is.array()"
+  ) %>% 
+  knitr::kable(.,format = "html")
+
+```
+
+---
+
+## Coerción
+
+R es versatil y resuelve las situaciones incomodas de la forma más lógica, sin embargo hay que ser precavidos:
+
+```{r}
+c(1, "Hello")
+c(FALSE, 3L)
+c(1.2, 3L)
+
+```
+
+---
+
+## Missing Values (NA)
+
+Los `NA` representan valores perdidos, sin embargo dependiendo del tipo de dato en un vector es aconsejable mantener el formato:
+
+```{r, eval=FALSE}
+NA_character_
+NA_integer_
+NA_complex_
+NA_real_
+```
+
+---
+
+## Otros valores importantes
+
+`NaN` - Not a number
+
+`Inf` - Infinito positivo
+
+`-Inf` - Infinito negativo
+
+<br/>
+
+.pull-left[
+```{r}
+pi / 0
+0 / 0
+1/0 + 1/0
+```
+]
+.pull-right[
+```{r}
+1/0 - 1/0
+NaN / NA
+NaN * NA
+```
+]
+
+---
+
+## Actividad
+
+.question[
+¿Cuál va a ser el resultado de estos vectores?
+]
+
+* `c(1, NA+1L, "C")`
+* `c(1L / 0, NA)`
+* `c(1:3, 5)`
+* `c(3L, NaN+1L)`
+* `c(NA, TRUE)`
+
+.question[
+¿Para que sirve la función `setNames`?
+]
+
+
+---
+.question[
+¿Como describirían el siguiente objeto?
+]
+
+
+```{r}
+x1 <- array(1:5, c(1, 1, 5))
+```
+
+
+---
+## Factores
+
+Los factores son empleados principalmente para almacenar datos categóricos. Poseen los atributos `class` y `levels` y aunque es un vector de enteros, cada valor está asociado a una etiqueta.
+.small[
+```{r message=FALSE}
+x <- factor(c("a", "b", "b", "a"))
+x
+
+typeof(x)
+
+attributes(x)
+
+```
+]
+
+---
+
+Los factores tambien pueden ser ordenados manteniendo un orden lógico, este se lo define en el atributo `levels`
+.small[
+```{r}
+sex_char <- c("m", "m", "m")
+
+sex_factor <- factor(sex_char, levels = c("m", "f"))
+
+table(sex_char)
+
+table(sex_factor)
+```
+]
+
+.small[
+```{r}
+
+grade <- ordered(c("b", "b", "a", "c"), levels = c("c", "b", "a"))
+
+grade
+```
+]
+---
+
+## Dates
+
+Poseeen el atributo "Date" y se pueden interpretar de dos maneras:
+
+- Fecha
+- Número de días transcurridos desde 1970-01-01
+
+```{r}
+today <- Sys.Date()
+
+typeof(today)
+
+attributes(today)
+
+date <- as.Date("1970-02-01")
+
+unclass(date)
+```
+
+---
+
+## POSIXct/POSIXlt
+
+`POSIX` significa Portable Operating System Interface, y sus variantes vienen dadas por:
+
+- **lt:** Local time
+- **ct:** Calendar time
+
+```{r}
+
+now_ct <- as.POSIXct("2018-08-01 22:00", tz = "UTC")
+
+now_ct
+
+typeof(now_ct)
+
+attributes(now_ct)
+
+```
+
+---
+
+## ¿Que hora es ahora punto com?
+
+Podemos ver que hora es en las distintas zonas horarias:
+
+```{r}
+structure(now_ct, tzone = "Asia/Tokyo")
+structure(now_ct, tzone = "America/New_York")
+structure(now_ct, tzone = "Australia/Lord_Howe")
+structure(now_ct, tzone = "Europe/Paris")
+```
+
+---
+
+## Data frames
+
+- Son las estructuras más comunmente empleadas en R. Son colecciones de vectores que obligatoriamente deben tener la misma longitud, cada vector es una columna.
+- Una `tibble` es una versión más versatil de `data.frame`
+
+```{r}
+df <- tibble(x = 1:3, y = c("a", "b", "c"))
+class(df)
+glimpse(df)
+```
+
+---
+
+## Data frames (cont.)
+
+```{r}
+attributes(df)
+class(df$x)
+class(df$y)
+```
+
+---
+## Extracción de un elemento en un data.frame
+
+Creación:
+```{r}
+first_df <- tibble(x = rnorm(10),y=rpois(10,8)) 
+
+head(first_df)
+```
+
+El operador `$` me devuelve un vector
+
+```{r}
+first_df$x
+```
+
+El operador `[[` me devuelve un vector
+
+```{r}
+first_df[["x"]]
+```
+
+---
+El operador `[` me devuelve un dataframe:
+
+- Filas:
+```{r}
+first_df[1,]
+```
+- Columnas:
+
+```{r}
+head(
+  first_df[,1],
+  4)
+```
+
+---
+- Extracción de columnas y filas
+
+```{r}
+
+second_df <- tibble(a = rnorm(10),
+                    b = rnorm(10),
+                    c = rnorm(10),
+                    d = rnorm(10))
+
+second_df[c(2,5),c("a","b")]
+
+```
+
+Equivale a:
+
+```{r, eval = TRUE}
+second_df[c(2,5),c(1,2)]
+
+```
+
+
+---
+class: inverse, center, middle
+
+## Para crear nombres sintacticos emplear la comilla invertida `:
+
+```{r, eval = FALSE}
+elemeto 1 <- c(1,2,3) 
+# Genera un error por el espacio
+
+`elemeto 1` <- c(1,2,3) 
+
+
+```
+
+
+---
+## Conclusiones
+
+- Si sus datos se comportan de formas inesperadas revisar el contenido de los datos y ver su hubo algún tipo de cohersión.
+- Siempre el análisis empieza por la revisión de los atributos, conjuntos o individuales, del set de datos.
+
+---
+class: inverse, center, middle
+
+# GRACIAS
