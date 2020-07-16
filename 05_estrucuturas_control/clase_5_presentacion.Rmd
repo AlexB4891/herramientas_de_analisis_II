@@ -1,0 +1,264 @@
+---
+title: "Curso herramientas de análisis con R"
+subtitle: "Clase 5: Estructuras de control"
+author: "Alex Bajaña"
+institute: "infoRmal"
+date: "2020/07/15 (Actualizado: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+class: inverse,center,middle
+
+# Números aleatorios
+
+---
+## Distribuciones de probabilidad
+
+Funciones para distribuciones de probabilidad en
+
+- **`rnorm`:** genera variables normales aleatorias con una media desviación estándar dadas
+- **`dnorm`:** evalúa la densidad de probabilidad Normal (con media y desviación estándar dadas) en un punto (o vector de puntos)
+- **`pnorm`:** evalúa la función de distribución acumulativa para una distribución Normal
+- **`rpois`:** genera variaciones aleatorias de Poisson con una tasa dada
+
+---
+
+# Ejemplo: Distribución Normal
+
+Variantes:
+
+- **`d`:** Función de densidad
+- **`r`:** Generación de números aleatorios
+- **`p`:** Función de distribución acumulada $\Phi(q)$
+- **`q`:** Cuantiles $\Phi^{-1}(p)$
+
+```{r, eval = FALSE}
+dnorm(x, mean = 0, sd = 1, log = FALSE) # x: cuantil
+pnorm(q, mean = 0, sd = 1, lower.tail = TRUE, log.p = FALSE) # q: cuantil
+qnorm(p, mean = 0, sd = 1, lower.tail = TRUE, log.p = FALSE) # p: probabilidad
+rnorm(n, mean = 0, sd = 1) # n:tamaño
+```
+---
+## Reproducibilidad
+
+R maneja un sistema de números *pseudo aleatorios* por lo que el uso de una <span style="color:#21b6d7">**semilla**</span> permite la reproducción de resultados, especialmente útil en simulaciones:
+
+- Se producen 100 cervezas al día. Existe un 10% de probabilidad de encontrar un error ¿Cuantas se deben arreglar al día?
+
+```{r}
+set.seed(1)
+rbinom(n = 7,size = 100,prob = 0.10)
+set.seed(5)
+rbinom(n = 7,size = 100,prob = 0.10)
+set.seed(1)
+rbinom(n = 7,size = 100,prob = 0.10)
+
+```
+
+---
+
+Probabilidad de obtener 8 errores en la linea de producción:
+
+```{r}
+dbinom(x = 8,size = 100,prob = 0.10)
+```
+
+Probabilidad de obtener 8 o menos errores en la linea de producción:
+
+```{r}
+pbinom(q = 8,size = 100,prob = 0.10)
+```
+---
+class: inverse,middle,center
+
+# Operadores
+
+---
+### Operadores aritméticos:
+
+```{r,echo = FALSE}
+
+library(magrittr)
+data.frame(stringsAsFactors=FALSE,
+           Operador = c("+","-", "*", "/", "^ or **", "x %% y", "x %/% y"),
+    `Descripción` = c("Adición","Sustracción", "Multiplicación", "División", "Exponente",
+                 "Modulo (x mod y) 5%%2 es 1", "División entera 5%/%2 is 2")
+) %>% 
+  knitr::kable(.,format = "html")
+
+```
+
+Considerando `x == (x %% y) + y * (x %/% y) `
+---
+
+### Operadores lógicos:
+
+```{r,echo = FALSE}
+data.frame(stringsAsFactors=FALSE,
+      Operator = c("<", "<=", ">", ">=", "==", "!=", "!x", "x | y", "x & y",
+                   "isTRUE(x)"),
+   Description = c("less than", "less than or equal to", "greater than",
+                   "greater than or equal to", "exactly equal to",
+                   "not equal to", "Not x", "x OR y", "x AND y", "test if X is TRUE")
+) %>% 
+ knitr::kable(.,format = "html")
+
+```
+
+---
+class: inverse,center,middle
+
+# For loops
+
+---
+
+Repite un <span style="color:#21b6d7">tramo</span> de código 
+
+.center[
+```{r, eval=FALSE}
+for (indice) {    
+  #  tramo de código
+  }
+
+```
+]
+
+Existen alternativas para los **for loops** que optimizan: 
+
+- Uso de memoria
+- Tiempos de procesamiento
+- TIempo codificando
+  
+Son especialmente necesarios en el uso Cadenas de Markov Monte Carlo que dependen del lanzamiento $[i-1]$  de la iteración $i$ 
+
+## ¿Paralelo o Secuencial?
+
+Si las operaciones son independientes y fijas a un indice: <span style="color:#21b6d7">**paralelo**</span>
+
+Caso contrario: <span style="color:#21b6d7">**secuencial**</span>
+
+---
+## Indice
+
+Secuencia de números enteros:
+
+```{r, eval = TRUE}
+normales <- list()  
+
+for(i in 1:5){
+  normales[[i]] <- rnorm(i)
+}
+
+str(normales)
+```
+
+---
+
+Vector de caracteres:
+
+```{r}
+asistentes <- c("Melody","Fausto","Daniela")
+
+for(nombre in asistentes){
+  
+  saludo <- paste("Hola!",nombre)
+  
+  print(saludo)
+  
+}
+```
+
+---
+## ¿Números primos?
+
+```{r}
+
+for(num in 5:25 ){
+flag <-  0
+# Sí el valor es mayor 1:
+if(num > 1) {
+  # Reviso la división:
+  flag <-  1
+  for(i in 2:(num-1)) {
+    if ((num %% i) == 0) {
+      flag <-  0
+      break
+    }
+  }
+} 
+if(num == 2)    flag <-  1
+if(flag == 1) {
+  print(paste(num,"Es un número primo"))
+} else {
+  next
+}
+}
+```
+
+---
+
+## Normalizar los valores de una matriz
+
+```{r}
+my.mat <- matrix(NA, nrow = 100, ncol = 20)
+
+for (i in 1:ncol(my.mat)) {  
+  my.mat[, i] <- rpois(100, lambda = i)
+}
+
+my.mat[1:5, 1:5]
+
+means <- c()
+
+for(i in 1:ncol(my.mat)){
+  means[i] <- mean(my.mat[, i],na.rm=T)
+}
+
+means
+```
+---
+
+```{r}
+
+
+sd <- c()
+
+for(i in 1:ncol(my.mat)){
+  sd[i] <- sd(my.mat[, i],na.rm=T)
+}
+
+sd
+
+centrada <- my.mat
+
+for(i in 1:ncol(my.mat)){
+  centrada[,i] <- (my.mat[, i] - means[i])/sd[i]
+}
+
+centrada[1:5, 1:5]
+
+```
+
+---
+
+# Más rápido
+
+```{r}
+
+centrada_2 <- apply(my.mat,2,function(x){
+  (x - mean(x,na.rm = T))/sd(x)
+  })
+
+centrada_2[1:5,1:5]
+```
+
+---
+class: inverse, middle, center
+
+#Gracias

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Curso herramientas de análisis con R</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Alex Bajaña" />
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Curso herramientas de análisis con R
+## Clase 5: Estructuras de control
+### Alex Bajaña
+### infoRmal
+### 2020/07/15 (Actualizado: 2020-07-16)
+
+---
+
+
+class: inverse,center,middle
+
+# Números aleatorios
+
+---
+## Distribuciones de probabilidad
+
+Funciones para distribuciones de probabilidad en
+
+- **`rnorm`:** genera variables normales aleatorias con una media desviación estándar dadas
+- **`dnorm`:** evalúa la densidad de probabilidad Normal (con media y desviación estándar dadas) en un punto (o vector de puntos)
+- **`pnorm`:** evalúa la función de distribución acumulativa para una distribución Normal
+- **`rpois`:** genera variaciones aleatorias de Poisson con una tasa dada
+
+---
+
+# Ejemplo: Distribución Normal
+
+Variantes:
+
+- **`d`:** Función de densidad
+- **`r`:** Generación de números aleatorios
+- **`p`:** Función de distribución acumulada `\(\Phi(q)\)`
+- **`q`:** Cuantiles `\(\Phi^{-1}(p)\)`
+
+
+```r
+dnorm(x, mean = 0, sd = 1, log = FALSE) # x: cuantil
+pnorm(q, mean = 0, sd = 1, lower.tail = TRUE, log.p = FALSE) # q: cuantil
+qnorm(p, mean = 0, sd = 1, lower.tail = TRUE, log.p = FALSE) # p: probabilidad
+rnorm(n, mean = 0, sd = 1) # n:tamaño
+```
+---
+## Reproducibilidad
+
+R maneja un sistema de números *pseudo aleatorios* por lo que el uso de una &lt;span style="color:#21b6d7"&gt;**semilla**&lt;/span&gt; permite la reproducción de resultados, especialmente útil en simulaciones:
+
+- Se producen 100 cervezas al día. Existe un 10% de probabilidad de encontrar un error ¿Cuantas se deben arreglar al día?
+
+
+```r
+set.seed(1)
+rbinom(n = 7,size = 100,prob = 0.10)
+```
+
+```
+## [1]  8  9 10 14  7 14 15
+```
+
+```r
+set.seed(5)
+rbinom(n = 7,size = 100,prob = 0.10)
+```
+
+```
+## [1]  7 11 14  8  6 11 10
+```
+
+```r
+set.seed(1)
+rbinom(n = 7,size = 100,prob = 0.10)
+```
+
+```
+## [1]  8  9 10 14  7 14 15
+```
+
+---
+
+Probabilidad de obtener 8 errores en la linea de producción:
+
+
+```r
+dbinom(x = 8,size = 100,prob = 0.10)
+```
+
+```
+## [1] 0.114823
+```
+
+Probabilidad de obtener 8 o menos errores en la linea de producción:
+
+
+```r
+pbinom(q = 8,size = 100,prob = 0.10)
+```
+
+```
+## [1] 0.3208739
+```
+---
+class: inverse,middle,center
+
+# Operadores
+
+---
+### Operadores aritméticos:
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Operador &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Descripción &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; + &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Adición &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; - &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Sustracción &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; * &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Multiplicación &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; / &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; División &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; ^ or ** &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Exponente &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; x %% y &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Modulo (x mod y) 5%%2 es 1 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; x %/% y &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; División entera 5%/%2 is 2 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+Considerando `x == (x %% y) + y * (x %/% y) `
+---
+
+### Operadores lógicos:
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Operator &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Description &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; &amp;lt; &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; less than &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; &amp;lt;= &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; less than or equal to &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; &amp;gt; &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; greater than &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; &amp;gt;= &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; greater than or equal to &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; == &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; exactly equal to &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; != &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; not equal to &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; !x &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Not x &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; x | y &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; x OR y &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; x &amp;amp; y &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; x AND y &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; isTRUE(x) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; test if X is TRUE &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+---
+class: inverse,center,middle
+
+# For loops
+
+---
+
+Repite un &lt;span style="color:#21b6d7"&gt;tramo&lt;/span&gt; de código 
+
+.center[
+
+```r
+for (indice) {    
+  #  tramo de código
+  }
+```
+]
+
+Existen alternativas para los **for loops** que optimizan: 
+
+- Uso de memoria
+- Tiempos de procesamiento
+- TIempo codificando
+  
+Son especialmente necesarios en el uso Cadenas de Markov Monte Carlo que dependen del lanzamiento `\([i-1]\)`  de la iteración `\(i\)` 
+
+## ¿Paralelo o Secuencial?
+
+Si las operaciones son independientes y fijas a un indice: &lt;span style="color:#21b6d7"&gt;**paralelo**&lt;/span&gt;
+
+Caso contrario: &lt;span style="color:#21b6d7"&gt;**secuencial**&lt;/span&gt;
+
+---
+## Indice
+
+Secuencia de números enteros:
+
+
+```r
+normales &lt;- list()  
+
+for(i in 1:5){
+  normales[[i]] &lt;- rnorm(i)
+}
+
+str(normales)
+```
+
+```
+## List of 5
+##  $ : num 0.415
+##  $ : num [1:2] -1.54 -0.929
+##  $ : num [1:3] -0.29472 -0.00577 2.40465
+##  $ : num [1:4] 0.764 -0.799 -1.148 -0.289
+##  $ : num [1:5] -0.299 -0.412 0.252 -0.892 0.436
+```
+
+---
+
+Vector de caracteres:
+
+
+```r
+asistentes &lt;- c("Melody","Fausto","Daniela")
+
+for(nombre in asistentes){
+  
+  saludo &lt;- paste("Hola!",nombre)
+  
+  print(saludo)
+  
+}
+```
+
+```
+## [1] "Hola! Melody"
+## [1] "Hola! Fausto"
+## [1] "Hola! Daniela"
+```
+
+---
+## ¿Números primos?
+
+
+```r
+for(num in 5:25 ){
+flag &lt;-  0
+# Sí el valor es mayor 1:
+if(num &gt; 1) {
+  # Reviso la división:
+  flag &lt;-  1
+  for(i in 2:(num-1)) {
+    if ((num %% i) == 0) {
+      flag &lt;-  0
+      break
+    }
+  }
+} 
+if(num == 2)    flag &lt;-  1
+if(flag == 1) {
+  print(paste(num,"Es un número primo"))
+} else {
+  next
+}
+}
+```
+
+```
+## [1] "5 Es un número primo"
+## [1] "7 Es un número primo"
+## [1] "11 Es un número primo"
+## [1] "13 Es un número primo"
+## [1] "17 Es un número primo"
+## [1] "19 Es un número primo"
+## [1] "23 Es un número primo"
+```
+
+---
+
+## Normalizar los valores de una matriz
+
+
+```r
+my.mat &lt;- matrix(NA, nrow = 100, ncol = 20)
+
+for (i in 1:ncol(my.mat)) {  
+  my.mat[, i] &lt;- rpois(100, lambda = i)
+}
+
+my.mat[1:5, 1:5]
+```
+
+```
+##      [,1] [,2] [,3] [,4] [,5]
+## [1,]    0    2    3    2    2
+## [2,]    1    6    3    4    5
+## [3,]    1    2    3    8    8
+## [4,]    2    3    2    9    2
+## [5,]    1    2    3    2    4
+```
+
+```r
+means &lt;- c()
+
+for(i in 1:ncol(my.mat)){
+  means[i] &lt;- mean(my.mat[, i],na.rm=T)
+}
+
+means
+```
+
+```
+##  [1]  0.98  2.05  2.78  4.21  4.93  6.19  6.96  8.17  8.68 10.13 10.67 11.94
+## [13] 12.40 14.08 14.33 15.67 17.86 17.88 19.51 20.15
+```
+---
+
+
+```r
+sd &lt;- c()
+
+for(i in 1:ncol(my.mat)){
+  sd[i] &lt;- sd(my.mat[, i],na.rm=T)
+}
+
+sd
+```
+
+```
+##  [1] 0.920913 1.343710 1.772859 2.051336 2.327937 2.372805 2.403365 2.964623
+##  [9] 3.466667 3.030668 3.607106 3.637126 3.840244 3.799734 3.640554 4.247530
+## [17] 4.367048 4.490799 4.493531 4.397830
+```
+
+```r
+centrada &lt;- my.mat
+
+for(i in 1:ncol(my.mat)){
+  centrada[,i] &lt;- (my.mat[, i] - means[i])/sd[i]
+}
+
+centrada[1:5, 1:5]
+```
+
+```
+##             [,1]        [,2]       [,3]       [,4]        [,5]
+## [1,] -1.06416129 -0.03721042  0.1240933 -1.0773466 -1.25862486
+## [2,]  0.02171758  2.93962321  0.1240933 -0.1023723  0.03006954
+## [3,]  0.02171758 -0.03721042  0.1240933  1.8475763  1.31876394
+## [4,]  1.10759645  0.70699799 -0.4399672  2.3350635 -1.25862486
+## [5,]  0.02171758 -0.03721042  0.1240933 -1.0773466 -0.39949526
+```
+
+---
+
+# Más rápido
+
+
+```r
+centrada_2 &lt;- apply(my.mat,2,function(x){
+  (x - mean(x,na.rm = T))/sd(x)
+  })
+
+centrada_2[1:5,1:5]
+```
+
+```
+##             [,1]        [,2]       [,3]       [,4]        [,5]
+## [1,] -1.06416129 -0.03721042  0.1240933 -1.0773466 -1.25862486
+## [2,]  0.02171758  2.93962321  0.1240933 -0.1023723  0.03006954
+## [3,]  0.02171758 -0.03721042  0.1240933  1.8475763  1.31876394
+## [4,]  1.10759645  0.70699799 -0.4399672  2.3350635 -1.25862486
+## [5,]  0.02171758 -0.03721042  0.1240933 -1.0773466 -0.39949526
+```
+
+---
+class: inverse, middle, center
+
+#Gracias
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
