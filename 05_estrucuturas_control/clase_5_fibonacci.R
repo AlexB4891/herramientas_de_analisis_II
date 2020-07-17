@@ -1,6 +1,6 @@
 ############################################################################
 #                  CURSO: Herramientas de análisis con R                   #
-#                     CLASE 3: Estructuras de control                      #
+#                     CLASE 5: Estructuras de control                      #
 ############################################################################
 
 # Una serie Fibonacci es una secuencia de números donde el valor i es igual 
