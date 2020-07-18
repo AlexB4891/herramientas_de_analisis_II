@@ -1,0 +1,76 @@
+---
+title: "Brecha salarial por sexo"
+author: "Alex Bajaña"
+date: "17/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Instalar el paquete "radxl" 
+if(!"readxl" %in% installed.packages()[,1]){
+  install.packages("readxl")
+}
+
+library(readxl)
+
+```
+
+# Introducción
+
+Al sexto día del curso **Herramientas de análisis con R** es hora de ver una aplicación con una base de datos real. El caso de estudio nos ayudará a recorrer los elementos tratados en clase, y otros de tipo estadístico que serán de utilidad para el estudiante.
+
+# Brecha salarial por sexo 
+
+## Lectura de la base
+
+```{r}
+# Insertar chunk con ctrl+alt+I
+
+path <- "datos/enemdu_persona_201912.csv"
+
+readLines(path,n = 3)
+
+enemdu <- read.csv(path, #  Nombre del archivo
+                   sep = ";", # Separador
+                   header = T) # Leer con cabecera
+
+
+dimensiones <- dim(enemdu)
+```
+
+La tabla enemdu tiene   `r dimensiones[1]` filas y  `r dimensiones[2]` columnas.
+
+## Lectura del diccionario
+
+```{r}
+dicc_path <- list.files("diccionarios/",full.names = T)
+
+hojas <- excel_sheets(dicc_path)
+
+hoja_1 <- read_excel(path = dicc_path,sheet = hojas[1],range = "C15:G170")
+
+variables <- c(sexo = "p02",
+               edad = "p03",
+               a_trabajo = "p45",
+               nivel_inst = "p10a",
+               h_trabajo = "p51a",
+               ingresos = "p66")
+
+diccionario <- hoja_1[hoja_1$`CODIGO DE LA VARIABLE` %in% variables, ]
+
+diccionario
+```
+ 
+## Sacra las columnas de la base
+
+```{r}
+
+enemdu <- enemdu[ ,variables]
+
+head(enemdu)
+
+```
+
+ 
