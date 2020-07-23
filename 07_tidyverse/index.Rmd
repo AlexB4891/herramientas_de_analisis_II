@@ -1,0 +1,382 @@
+---
+title: "Curso herramientas de análisis con R"
+subtitle: "Clase 8: Un paquete para gobernarlos a todos"
+author: "Alex Bajaña"
+institute: "infoRmal"
+date: "2020/07/23 (Actualizado: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    # seal: false
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+class: inverse, center, middle
+background-image: url(tidyprov.jpg)
+background-size: cover
+
+# 1. El universo Tidyverse
+
+---
+background-image: url(img/workflow.jpg)
+background-size: center
+
+---
+
+```{r setup, echo = F, message=FALSE}
+library(tidyverse)
+```
+
+
+class: inverse, center, middle
+background-image: url(dplyr.jpg)
+background-size: cover
+
+# 2. Manipulando los datos
+
+---
+
+#Dplyr
+
+Paquete para transformación de datos en forma **tabular**, integra en R una gramática intuitiva para transformarlos.
+
+## Reduciendo una base de datos:
+
+- <font color="#d7215b">select()</font> Extrae variables
+
+- <font color="#d7215b">filter()</font> Extrae casos
+
+- <font color="#d7215b">arrange()</font> Reordena
+
+---
+class: inverse, center, middle
+background-image: url(select.jpg)
+background-size: cover
+
+# 3. Seleccionando los datos
+---
+# Select()
+
+En todos los paquetes del `tidyverse` está integrada la `tidy evaluation`, un método de evaluación que da una variedad de opciones para programar.
+
+
+```{r, eval=FALSE}
+ select(.data, …)
+```
+
+- <font color="#d7215b">.data</font> Data frame / tibble
+- <font color="#d7215b">...</font> Nombres de columna, o función auxiliar
+
+###...
+
+```{r, eval = FALSE}
+# Nombre de variables
+select(.data, nombre1, nombre2)
+# Caracteres
+select(.data, "nombre1", "nombre2")
+# Posiciones
+select(.data, c(1, 2))
+```
+
+### Todas menos ...
+
+```{r, eval=FALSE}
+select(.data, -nombre1, -nombre2)
+```
+---
+.center[
+## select()
+]
+
+Cargamos los datos:
+```{r}
+tabla <- read.csv("saiku-export.csv") %>% 
+  as_tibble
+
+names(tabla) <- c("activ","provin","tipo_c","grupo_e",
+                  "gran_c","clase","anio","mes","estado",
+                  "compras_t","ventas_t","impuesto_c")
+```
+
+Evaluación con nombres de varibales:
+
+```{r}
+select(tabla,activ,provin,impuesto_c) %>% 
+  head(4)
+```
+---
+.center[
+## Funciones auxiliares
+]
+
+**Rango de varibales**
+```{r, eval =FALSE}
+select(tabla,provin:anio)
+```
+
+**Todas menos**
+```{r, eval =FALSE}
+select(tabla,-c(provin,anio))
+```
+
+**starts_with()**
+```{r, eval =FALSE}
+select(tabla,starts_with("a"))
+```
+
+**ends_with()**
+```{r, eval =FALSE}
+select(tabla,ends_with("c"))
+```
+---
+
+**contains()**
+```{r, eval =FALSE}
+select(tabla,contains("as"))
+```
+
+
+**matches()** Usa una expresión regular, en este caso, un string de 4 caracteres
+```{r, eval =FALSE}
+select(tabla,matches("^.{4}$"))
+```
+
+**one_of()**
+```{r, eval =FALSE}
+select(tabla,one_of(c("Anio","año","anio")))
+```
+
+**num_range()**
+```{r, eval =FALSE}
+tabla_2 <- tabla
+names(tabla_2) <- paste0("v_",1:ncol(tabla_2))  
+select(tabla_2,num_range("v_",3:6))
+```
+
+---
+
+# Prueba
+
+Cuales de estas expresiones dan como resultado un set de datos con las variables: `provin`, `gran_c`, `anio` y `ventas_t`
+
+```{r, eval=FALSE}
+select(tabla,-c(activ,tipo_c,grupo_e,clase,mes,estado,compras_t,impuesto_c))
+```
+
+```{r, eval=FALSE}
+select(tabla,clase:mes)
+```
+
+```{r, eval=FALSE}
+select(tabla,matches("n"))
+```
+
+```{r, eval=FALSE}
+select(tabla, ends_with("n"))
+```
+
+
+```{r, eval=FALSE}
+select(tabla, c(2,5,7,11))
+```
+
+---
+class: inverse, center, middle
+background-image: url(filter.jpg)
+background-size: cover
+
+# 4. Filtrando los datos
+---
+
+```{r, eval=FALSE}
+filter(.data, … )
+```
+
+# filter()
+
+- <font color="#d7215b">.data</font> dataframe o tibble
+- <font color="#d7215b">...</font> operación lógica
+
+## Operadores lógicos:
+
+```{r, echo =FALSE}
+
+vector <- c("x < y ","Menor que",
+"x > y ","Mayor que",
+"x == y ","Igual a",
+"x <= y ","Menor o igual",
+"x >= y ","Mayor o igual",
+"x != y ","Todos excepto",
+"x %in% y","Pertenece a",
+"is.na(x) ","Es NA?",
+"!is.na(x)"," No es NA?") %>% 
+  str_trim
+
+tibble(Operador = vector[seq(1,18,by=2)],
+       `Descripción` = vector[seq(2,18,by=2)]
+) %>% knitr::kable(.,format = "html")
+```
+
+---
+
+```{r}
+filter(tabla,activ == "B") %>% head(3)
+```
+
+```{r}
+filter(tabla,impuesto_c >= 10e6) %>% head(3)
+```
+
+---
+
+```{r}
+ind <- sample(1:nrow(tabla),30)
+tabla$ventas_t[ind] <- NA_real_
+filter(tabla,is.na(ventas_t)) %>% head(3)
+```
+
+```{r, eval=FALSE}
+ind <- grepl(x = tabla$provin,pattern = "^S")
+f_tabla <- filter(tabla,ind) 
+table(f_tabla$provin) 
+```
+
+---
+
+## Operaciones algebráicas 
+
+```{r, echo=FALSE}
+vector_2 <- c("a & b" ,"and",
+"a | b" ,"or",
+"xor(a,b)" ,"exactly or",
+"!a" ,"not")
+
+tibble(Operador = vector_2[seq(1,8,by=2)],
+       `Descripción` = vector_2[seq(2,8,by=2)]
+) %>% knitr::kable(.,format = "html")
+
+```
+
+### Ejemplos:
+```{r}
+filter(tabla, activ == "A", anio == 2016) %>% head(4)
+```
+---
+
+```{r}
+filter(tabla, provin == "CHIMBORAZO",
+       mes == 4 | mes == 5,
+       anio == 2016,
+       ventas_t >= 20e6)
+```
+
+Corrección
+
+```{r,eval=FALSE}
+filter(tabla, provin == "CHIMBORAZO",
+       mes %in% c(4, 5),
+       anio == 2016,
+       ventas_t >= 20e6)
+```
+
+---
+
+# OJO
+
+Errores comunes:
+
+```{r, eval = FALSE}
+# No olvidar usar doble igual para equivalencia:
+filter(tabla, estado = "ACTIVO")
+filter(tabla, estado == "ACTIVO")
+
+# Los strings siempre van con comillas
+filter(tabla, estado == ACTIVO)
+filter(tabla, estado == "ACTIVO")
+
+# No se pueden hacer dos operadores en uno solo
+filter(tabla, 10e6 <impuesto_c < 20e6)
+filter(tabla, 10e6 <impuesto_c,impuesto_c < 20e6)
+# o
+filter(tabla, between(impuesto_c,10e6, 20e6))
+
+# Muchas equivalencias, entonces usar %in% 
+filter(tabla,mes == 5 |mes == 6 |mes == 7 |mes == 8)
+filter(tabla,mes %in% c(5, 6, 7, 8))
+```
+
+---
+
+# Prueba 2:
+
+¿Cual es el rango de ingresos de las empresas en estado activo que pertenecen a un grupo económico entre los primeros 6 meses del 2015?
+
+[Hint:]() sobre un vector númerico la función `min` devuelve el minimo y `máx` el máximo
+
+---
+
+class: inverse, center, middle
+background-image: url(arrange.png)
+background-size: cover
+
+# 5. Ordenando los datos
+---
+# arrange
+
+## Operaciones con booleanos
+
+Intersección de condiciones.
+
+```{r, eval = FALSE}
+ filter(activ == "E", tipo_c == "SECTOR PRIVADO")        
+```
+
+Primera condición verdadera, segunda falsa.
+
+```{r, eval = FALSE}
+ filter(activ == "E", !tipo_c == "SECTOR PRIVADO")       
+
+```
+
+Unión
+
+```{r, eval = FALSE}
+ filter(activ == "E" | tipo_c == "SECTOR PRIVADO")       #  unión.
+```
+
+Solo una de las dos condiciones se cumple:
+
+```{r, eval=FALSE}
+ filter(xor(activ == "E", tipo_c == "SECTOR PRIVADO"))    # solo una condición se cumple
+```
+
+
+---
+.center[
+# arrange()
+]
+
+```{r, eval=FALSE}
+arrange(.data, …)
+```
+
+- <font color="#d7215b">.data</font> Data frame / tibble
+- <font color="#d7215b">...</font> Nombres de columna, o función auxiliar
+
+```{r}
+# Orden ascendente:
+arrange(tabla,impuesto_c) %>% select(anio,impuesto_c) %>% head(3)
+
+# Orden descendente:
+arrange(tabla,desc(impuesto_c)) %>% select(anio,impuesto_c) %>% head(3)
+```
+
+--- 
+
+class: inverse, center, middle
+
+# GRACIAS
+
