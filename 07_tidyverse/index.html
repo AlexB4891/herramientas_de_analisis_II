@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Curso herramientas de análisis con R</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Alex Bajaña" />
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Curso herramientas de análisis con R
+## Clase 8: Un paquete para gobernarlos a todos
+### Alex Bajaña
+### infoRmal
+### 2020/07/23 (Actualizado: 2020-07-23)
+
+---
+
+
+class: inverse, center, middle
+background-image: url(tidyprov.jpg)
+background-size: cover
+
+# 1. El universo Tidyverse
+
+---
+background-image: url(img/workflow.jpg)
+background-size: center
+
+---
+
+
+
+
+class: inverse, center, middle
+background-image: url(dplyr.jpg)
+background-size: cover
+
+# 2. Manipulando los datos
+
+---
+
+#Dplyr
+
+Paquete para transformación de datos en forma **tabular**, integra en R una gramática intuitiva para transformarlos.
+
+## Reduciendo una base de datos:
+
+- &lt;font color="#d7215b"&gt;select()&lt;/font&gt; Extrae variables
+
+- &lt;font color="#d7215b"&gt;filter()&lt;/font&gt; Extrae casos
+
+- &lt;font color="#d7215b"&gt;arrange()&lt;/font&gt; Reordena
+
+---
+class: inverse, center, middle
+background-image: url(select.jpg)
+background-size: cover
+
+# 3. Seleccionando los datos
+---
+# Select()
+
+En todos los paquetes del `tidyverse` está integrada la `tidy evaluation`, un método de evaluación que da una variedad de opciones para programar.
+
+
+
+```r
+ select(.data, …)
+```
+
+- &lt;font color="#d7215b"&gt;.data&lt;/font&gt; Data frame / tibble
+- &lt;font color="#d7215b"&gt;...&lt;/font&gt; Nombres de columna, o función auxiliar
+
+###...
+
+
+```r
+# Nombre de variables
+select(.data, nombre1, nombre2)
+# Caracteres
+select(.data, "nombre1", "nombre2")
+# Posiciones
+select(.data, c(1, 2))
+```
+
+### Todas menos ...
+
+
+```r
+select(.data, -nombre1, -nombre2)
+```
+---
+.center[
+## select()
+]
+
+Cargamos los datos:
+
+```r
+tabla &lt;- read.csv("saiku-export.csv") %&gt;% 
+  as_tibble
+
+names(tabla) &lt;- c("activ","provin","tipo_c","grupo_e",
+                  "gran_c","clase","anio","mes","estado",
+                  "compras_t","ventas_t","impuesto_c")
+```
+
+Evaluación con nombres de varibales:
+
+
+```r
+select(tabla,activ,provin,impuesto_c) %&gt;% 
+  head(4)
+```
+
+```
+## # A tibble: 4 x 3
+##   activ provin impuesto_c
+##   &lt;chr&gt; &lt;chr&gt;       &lt;dbl&gt;
+## 1 9     AZUAY           0
+## 2 9     AZUAY           0
+## 3 9     AZUAY           0
+## 4 9     AZUAY           0
+```
+---
+.center[
+## Funciones auxiliares
+]
+
+**Rango de varibales**
+
+```r
+select(tabla,provin:anio)
+```
+
+**Todas menos**
+
+```r
+select(tabla,-c(provin,anio))
+```
+
+**starts_with()**
+
+```r
+select(tabla,starts_with("a"))
+```
+
+**ends_with()**
+
+```r
+select(tabla,ends_with("c"))
+```
+---
+
+**contains()**
+
+```r
+select(tabla,contains("as"))
+```
+
+
+**matches()** Usa una expresión regular, en este caso, un string de 4 caracteres
+
+```r
+select(tabla,matches("^.{4}$"))
+```
+
+**one_of()**
+
+```r
+select(tabla,one_of(c("Anio","año","anio")))
+```
+
+**num_range()**
+
+```r
+tabla_2 &lt;- tabla
+names(tabla_2) &lt;- paste0("v_",1:ncol(tabla_2))  
+select(tabla_2,num_range("v_",3:6))
+```
+
+---
+
+# Prueba
+
+Cuales de estas expresiones dan como resultado un set de datos con las variables: `provin`, `gran_c`, `anio` y `ventas_t`
+
+
+```r
+select(tabla,-c(activ,tipo_c,grupo_e,clase,mes,estado,compras_t,impuesto_c))
+```
+
+
+```r
+select(tabla,clase:mes)
+```
+
+
+```r
+select(tabla,matches("n"))
+```
+
+
+```r
+select(tabla, ends_with("n"))
+```
+
+
+
+```r
+select(tabla, c(2,5,7,11))
+```
+
+---
+class: inverse, center, middle
+background-image: url(filter.jpg)
+background-size: cover
+
+# 4. Filtrando los datos
+---
+
+
+```r
+filter(.data, … )
+```
+
+# filter()
+
+- &lt;font color="#d7215b"&gt;.data&lt;/font&gt; dataframe o tibble
+- &lt;font color="#d7215b"&gt;...&lt;/font&gt; operación lógica
+
+## Operadores lógicos:
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Operador &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Descripción &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; x &amp;lt; y &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Menor que &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; x &amp;gt; y &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Mayor que &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; x == y &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Igual a &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; x &amp;lt;= y &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Menor o igual &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; x &amp;gt;= y &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Mayor o igual &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; x != y &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Todos excepto &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; x %in% y &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Pertenece a &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; is.na(x) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; Es NA? &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; !is.na(x) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; No es NA? &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+---
+
+
+```r
+filter(tabla,activ == "B") %&gt;% head(3)
+```
+
+```
+## # A tibble: 3 x 12
+##   activ provin tipo_c grupo_e gran_c clase  anio   mes estado compras_t ventas_t
+##   &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;  &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt;      &lt;dbl&gt;    &lt;dbl&gt;
+## 1 B     AZUAY  ND     NO      NO     OTROS  2015     1 ACTIVO   315021.  354144.
+## 2 B     AZUAY  ND     NO      NO     OTROS  2015     1 PASIVO    11145.   23316.
+## 3 B     AZUAY  ND     NO      NO     OTROS  2015     1 SUSPE~     5320.    6776.
+## # ... with 1 more variable: impuesto_c &lt;dbl&gt;
+```
+
+
+```r
+filter(tabla,impuesto_c &gt;= 10e6) %&gt;% head(3)
+```
+
+```
+## # A tibble: 3 x 12
+##   activ provin tipo_c grupo_e gran_c clase  anio   mes estado compras_t ventas_t
+##   &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;  &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt;      &lt;dbl&gt;    &lt;dbl&gt;
+## 1 B     PICHI~ SECTO~ NO      NO     ESPE~  2017    10 ACTIVO 18988230.   1.42e8
+## 2 B     PICHI~ SECTO~ NO      SI     ESPE~  2016     4 ACTIVO 87477729.   1.40e8
+## 3 B     PICHI~ SECTO~ NO      SI     ESPE~  2016     5 ACTIVO 30645158.   1.37e8
+## # ... with 1 more variable: impuesto_c &lt;dbl&gt;
+```
+
+---
+
+
+```r
+ind &lt;- sample(1:nrow(tabla),30)
+tabla$ventas_t[ind] &lt;- NA_real_
+filter(tabla,is.na(ventas_t)) %&gt;% head(3)
+```
+
+```
+## # A tibble: 3 x 12
+##   activ provin tipo_c grupo_e gran_c clase  anio   mes estado compras_t ventas_t
+##   &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;  &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt;      &lt;dbl&gt;    &lt;dbl&gt;
+## 1 A     LOJA   SECTO~ NO      NO     OTROS  2016     3 ACTIVO   338855.       NA
+## 2 A     SANTO~ SECTO~ NO      NO     OTROS  2017    11 ACTIVO  3167619.       NA
+## 3 C     SANTO~ ND     NO      NO     RISE   2015    12 ACTIVO    10511.       NA
+## # ... with 1 more variable: impuesto_c &lt;dbl&gt;
+```
+
+
+```r
+ind &lt;- grepl(x = tabla$provin,pattern = "^S")
+f_tabla &lt;- filter(tabla,ind) 
+table(f_tabla$provin) 
+```
+
+---
+
+## Operaciones algebráicas 
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; Operador &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Descripción &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; a &amp;amp; b &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; and &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; a | b &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; or &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; xor(a,b) &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; exactly or &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; !a &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; not &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+### Ejemplos:
+
+```r
+filter(tabla, activ == "A", anio == 2016) %&gt;% head(4)
+```
+
+```
+## # A tibble: 4 x 12
+##   activ provin tipo_c grupo_e gran_c clase  anio   mes estado compras_t ventas_t
+##   &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;  &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt;      &lt;dbl&gt;    &lt;dbl&gt;
+## 1 A     AZUAY  ND     NO      NO     OTROS  2016     1 ACTIVO  1576363. 1808896.
+## 2 A     AZUAY  ND     NO      NO     OTROS  2016     1 PASIVO     3017.    6304.
+## 3 A     AZUAY  ND     NO      NO     OTROS  2016     1 SUSPE~   245143.  346385.
+## 4 A     AZUAY  ND     NO      NO     OTROS  2016     2 ACTIVO  1539927. 1684767.
+## # ... with 1 more variable: impuesto_c &lt;dbl&gt;
+```
+---
+
+
+```r
+filter(tabla, provin == "CHIMBORAZO",
+       mes == 4 | mes == 5,
+       anio == 2016,
+       ventas_t &gt;= 20e6)
+```
+
+```
+## # A tibble: 2 x 12
+##   activ provin tipo_c grupo_e gran_c clase  anio   mes estado compras_t ventas_t
+##   &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt;  &lt;chr&gt;   &lt;chr&gt;  &lt;chr&gt; &lt;int&gt; &lt;int&gt; &lt;chr&gt;      &lt;dbl&gt;    &lt;dbl&gt;
+## 1 G     CHIMB~ ND     NO      NO     OTROS  2016     4 ACTIVO 25898326.   2.74e7
+## 2 G     CHIMB~ ND     NO      NO     OTROS  2016     5 ACTIVO 29365710.   3.03e7
+## # ... with 1 more variable: impuesto_c &lt;dbl&gt;
+```
+
+Corrección
+
+
+```r
+filter(tabla, provin == "CHIMBORAZO",
+       mes %in% c(4, 5),
+       anio == 2016,
+       ventas_t &gt;= 20e6)
+```
+
+---
+
+# OJO
+
+Errores comunes:
+
+
+```r
+# No olvidar usar doble igual para equivalencia:
+filter(tabla, estado = "ACTIVO")
+filter(tabla, estado == "ACTIVO")
+
+# Los strings siempre van con comillas
+filter(tabla, estado == ACTIVO)
+filter(tabla, estado == "ACTIVO")
+
+# No se pueden hacer dos operadores en uno solo
+filter(tabla, 10e6 &lt;impuesto_c &lt; 20e6)
+filter(tabla, 10e6 &lt;impuesto_c,impuesto_c &lt; 20e6)
+# o
+filter(tabla, between(impuesto_c,10e6, 20e6))
+
+# Muchas equivalencias, entonces usar %in% 
+filter(tabla,mes == 5 |mes == 6 |mes == 7 |mes == 8)
+filter(tabla,mes %in% c(5, 6, 7, 8))
+```
+
+---
+
+# Prueba 2:
+
+¿Cual es el rango de ingresos de las empresas en estado activo que pertenecen a un grupo económico entre los primeros 6 meses del 2015?
+
+[Hint:]() sobre un vector númerico la función `min` devuelve el minimo y `máx` el máximo
+
+---
+
+class: inverse, center, middle
+background-image: url(arrange.png)
+background-size: cover
+
+# 5. Ordenando los datos
+---
+# arrange
+
+## Operaciones con booleanos
+
+Intersección de condiciones.
+
+
+```r
+ filter(activ == "E", tipo_c == "SECTOR PRIVADO")        
+```
+
+Primera condición verdadera, segunda falsa.
+
+
+```r
+ filter(activ == "E", !tipo_c == "SECTOR PRIVADO")       
+```
+
+Unión
+
+
+```r
+ filter(activ == "E" | tipo_c == "SECTOR PRIVADO")       #  unión.
+```
+
+Solo una de las dos condiciones se cumple:
+
+
+```r
+ filter(xor(activ == "E", tipo_c == "SECTOR PRIVADO"))    # solo una condición se cumple
+```
+
+
+---
+.center[
+# arrange()
+]
+
+
+```r
+arrange(.data, …)
+```
+
+- &lt;font color="#d7215b"&gt;.data&lt;/font&gt; Data frame / tibble
+- &lt;font color="#d7215b"&gt;...&lt;/font&gt; Nombres de columna, o función auxiliar
+
+
+```r
+# Orden ascendente:
+arrange(tabla,impuesto_c) %&gt;% select(anio,impuesto_c) %&gt;% head(3)
+```
+
+```
+## # A tibble: 3 x 2
+##    anio impuesto_c
+##   &lt;int&gt;      &lt;dbl&gt;
+## 1  2015          0
+## 2  2015          0
+## 3  2015          0
+```
+
+```r
+# Orden descendente:
+arrange(tabla,desc(impuesto_c)) %&gt;% select(anio,impuesto_c) %&gt;% head(3)
+```
+
+```
+## # A tibble: 3 x 2
+##    anio impuesto_c
+##   &lt;int&gt;      &lt;dbl&gt;
+## 1  2017  36870160.
+## 2  2017  36302501.
+## 3  2016  34887181.
+```
+
+--- 
+
+class: inverse, center, middle
+
+# GRACIAS
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
