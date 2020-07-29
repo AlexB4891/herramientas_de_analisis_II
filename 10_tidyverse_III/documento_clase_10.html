@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Curso herramientas de análisis con R</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Alex Bajaña" />
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Curso herramientas de análisis con R
+## Clase 11: Road to ggplot2 gather() &amp; spread()
+### Alex Bajaña
+### infoRmal
+### 2020/ (updated: 2020-07-29)
+
+---
+
+
+
+
+
+En esta ocasión vamos a emplear la función `gather` para realizar un gráfico de barras acumulado. Iniciamos el trabajo con la apertura de los paquetes necesarios, en este caso `tidyverse` que contiene la colección de librerias suficientes para la tarea en mención.
+
+---
+
+
+```r
+library(tidyverse)
+
+barras_data &lt;- read.table(
+  text = '"Year"	"Residencial"	"Comercial"	"Industrial"	"Alum_Publico"	"Otros"	"Total"	"PIB"
+1999	2960304.10032	1263990.201535	2072556.317377	593209.077133	840630.458316	7730690.154681	37318.961
+2000	2754376.536226	1340596.946627	2193883.730571	608315.778822	892165.035113	7789338.027359	37726.41
+2001	2915740.957621	1411664.732147	2139392.832765	634090.725733	888609.843636	7989499.091902	39241.363
+2002	2806151.064327	1371347.90274	2426899.530174	623708.591302	883457.067934	8111564.156477	40848.994
+2003	3161384.445246	1670604.579659	2497741.599647	639645.329194	782747.018026	8752122.971772	41961.262
+2004	3101252.015002	1732679.321517	2535568.448954	631408.973711	899392.755598	8900301.514782	45406.71
+2005	3247987.111009	1819669.748557	2883989.111589	635884.433337	890430.727586	9477961.132078	47809.319
+2006	3525687.26949	2039201.734226	3136147.024558	683315.919535	990465.767275	10374817.715084	49914.615
+2007	3726120.488361	2081225.111711	3319661.348945	713187.586289	1129376.93429	10969571.469596	51007.777
+2008	3942948.598279	2152699.754519	2989730.482448	720944.766436	1358335.462967	11164659.064649	54250.408
+2009	4225759.675627	2297635.136859	3545404.268636	787267.989596	972913.17591	11828980.246628	54557.732
+2010	4750913.85968	2449708.010119	4264212.117044	775056.180783	968968.383498	13208858.551124	56481.055
+2011	4814025.906743	2760607.110628	4409466.401476	815434.827859	1174336.54497	13973870.791676	60925.064
+2012	5277439.394383	3053383.736677	4715147.056582	850243.24684	1363082.682288	15259296.11677	64362.433
+2013	5726839.633464	3336888.790533	4960458.004916	933025.849029	1684323.633689	16641535.911631	67546.128
+2014	6364000.961558	3785720.5819	5353434.598867	1023341.737025	1810676.280142	18337174.159492	70105.362
+2015	6927706.602879	3981733.456981	5360437.619105	1081317.747618	1979834.995281	19331030.421864	70174.677
+2016	7104846.536734	3839123.588635	5231381.543307	1127096.823243	2049140.834711	19351589.32663	69314.066
+2017	7268729.910058	3832363.339025	5698316.624193	1206765.261801	2142005.709584	20148180.844661	70955.691
+2018	NA NA NA NA NA 21051744.74	71932.84',
+  header = TRUE
+) %&gt;% filter(complete.cases(.))
+```
+---
+
+La función `gather` del paquete `tidyr` comvierte columnas en filas agregando una variable, se requieren los siguientes argumentos:
+- Un objeto (tibble/data.frame/data.table) [1]
+- El nombre de una variable que almacena los nombres de las variables [2]
+- La(s) variable(s) que deben quedar fuera de la transformación, (de preferencia categóricas) [3]
+
+---
+
+
+```r
+# Evaluación en el ambiente de la función gather:
+gather(barras_data,
+       variable, #&lt;&lt; [1]
+       valor,    #&lt;&lt; [2]
+       -Year     #&lt;&lt; [3]
+       )
+
+# Tidy evaluation:
+# # Con caracteres:
+gather(barras_data,
+       "variable",  #&lt;&lt; [1]
+       "valor",     #&lt;&lt; [2]
+       -"Year"      #&lt;&lt; [3]
+       )
+
+# # Con posiciones:
+gather(barras_data,
+       "variable",   #&lt;&lt; [1]
+       "valor",      #&lt;&lt; [2]
+       -1            #&lt;&lt; [3]
+       )
+
+
+# Se pueden combinar las anteriores, pero la función no reconoce
+# resultados de funciones como str_subset o grep
+```
+
+---
+
+La ventaja de los diferentes tipos de evaluación que tienen las funciones de `dplyr` es que puedes crear funciones que hagan lo mismo pero con una distinta lógica para llamar la función:
+
+
+```r
+# Uso de eval y parse_expr:
+gather_mod &lt;- function(data,var){
+
+  # Armo el vector de nombres:
+  var_2 &lt;- var %&gt;% 
+    str_c("-",.) %&gt;% 
+    str_c(collapse = ",")
+  
+  # Defino a "variable" y "valor" como fijas para [1] y [2]
+  str_c(
+    'gather(data,"variable","valor",',
+    var_2,
+    ')'
+  ) %&gt;% 
+    rlang::parse_expr(.) %&gt;%  
+    eval                      #&lt;&lt; [**]
+}
+
+gather_mod(barras_data,"Year")
+```
+
+```
+##     Year     variable       valor
+## 1   1999  Residencial  2960304.10
+## 2   2000  Residencial  2754376.54
+## 3   2001  Residencial  2915740.96
+## 4   2002  Residencial  2806151.06
+## 5   2003  Residencial  3161384.45
+## 6   2004  Residencial  3101252.02
+## 7   2005  Residencial  3247987.11
+## 8   2006  Residencial  3525687.27
+## 9   2007  Residencial  3726120.49
+## 10  2008  Residencial  3942948.60
+## 11  2009  Residencial  4225759.68
+## 12  2010  Residencial  4750913.86
+## 13  2011  Residencial  4814025.91
+## 14  2012  Residencial  5277439.39
+## 15  2013  Residencial  5726839.63
+## 16  2014  Residencial  6364000.96
+## 17  2015  Residencial  6927706.60
+## 18  2016  Residencial  7104846.54
+## 19  2017  Residencial  7268729.91
+## 20  1999    Comercial  1263990.20
+## 21  2000    Comercial  1340596.95
+## 22  2001    Comercial  1411664.73
+## 23  2002    Comercial  1371347.90
+## 24  2003    Comercial  1670604.58
+## 25  2004    Comercial  1732679.32
+## 26  2005    Comercial  1819669.75
+## 27  2006    Comercial  2039201.73
+## 28  2007    Comercial  2081225.11
+## 29  2008    Comercial  2152699.75
+## 30  2009    Comercial  2297635.14
+## 31  2010    Comercial  2449708.01
+## 32  2011    Comercial  2760607.11
+## 33  2012    Comercial  3053383.74
+## 34  2013    Comercial  3336888.79
+## 35  2014    Comercial  3785720.58
+## 36  2015    Comercial  3981733.46
+## 37  2016    Comercial  3839123.59
+## 38  2017    Comercial  3832363.34
+## 39  1999   Industrial  2072556.32
+## 40  2000   Industrial  2193883.73
+## 41  2001   Industrial  2139392.83
+## 42  2002   Industrial  2426899.53
+## 43  2003   Industrial  2497741.60
+## 44  2004   Industrial  2535568.45
+## 45  2005   Industrial  2883989.11
+## 46  2006   Industrial  3136147.02
+## 47  2007   Industrial  3319661.35
+## 48  2008   Industrial  2989730.48
+## 49  2009   Industrial  3545404.27
+## 50  2010   Industrial  4264212.12
+## 51  2011   Industrial  4409466.40
+## 52  2012   Industrial  4715147.06
+## 53  2013   Industrial  4960458.00
+## 54  2014   Industrial  5353434.60
+## 55  2015   Industrial  5360437.62
+## 56  2016   Industrial  5231381.54
+## 57  2017   Industrial  5698316.62
+## 58  1999 Alum_Publico   593209.08
+## 59  2000 Alum_Publico   608315.78
+## 60  2001 Alum_Publico   634090.73
+## 61  2002 Alum_Publico   623708.59
+## 62  2003 Alum_Publico   639645.33
+## 63  2004 Alum_Publico   631408.97
+## 64  2005 Alum_Publico   635884.43
+## 65  2006 Alum_Publico   683315.92
+## 66  2007 Alum_Publico   713187.59
+## 67  2008 Alum_Publico   720944.77
+## 68  2009 Alum_Publico   787267.99
+## 69  2010 Alum_Publico   775056.18
+## 70  2011 Alum_Publico   815434.83
+## 71  2012 Alum_Publico   850243.25
+## 72  2013 Alum_Publico   933025.85
+## 73  2014 Alum_Publico  1023341.74
+## 74  2015 Alum_Publico  1081317.75
+## 75  2016 Alum_Publico  1127096.82
+## 76  2017 Alum_Publico  1206765.26
+## 77  1999        Otros   840630.46
+## 78  2000        Otros   892165.04
+## 79  2001        Otros   888609.84
+## 80  2002        Otros   883457.07
+## 81  2003        Otros   782747.02
+## 82  2004        Otros   899392.76
+## 83  2005        Otros   890430.73
+## 84  2006        Otros   990465.77
+## 85  2007        Otros  1129376.93
+## 86  2008        Otros  1358335.46
+## 87  2009        Otros   972913.18
+## 88  2010        Otros   968968.38
+## 89  2011        Otros  1174336.54
+## 90  2012        Otros  1363082.68
+## 91  2013        Otros  1684323.63
+## 92  2014        Otros  1810676.28
+## 93  2015        Otros  1979835.00
+## 94  2016        Otros  2049140.83
+## 95  2017        Otros  2142005.71
+## 96  1999        Total  7730690.15
+## 97  2000        Total  7789338.03
+## 98  2001        Total  7989499.09
+## 99  2002        Total  8111564.16
+## 100 2003        Total  8752122.97
+## 101 2004        Total  8900301.51
+## 102 2005        Total  9477961.13
+## 103 2006        Total 10374817.72
+## 104 2007        Total 10969571.47
+## 105 2008        Total 11164659.06
+## 106 2009        Total 11828980.25
+## 107 2010        Total 13208858.55
+## 108 2011        Total 13973870.79
+## 109 2012        Total 15259296.12
+## 110 2013        Total 16641535.91
+## 111 2014        Total 18337174.16
+## 112 2015        Total 19331030.42
+## 113 2016        Total 19351589.33
+## 114 2017        Total 20148180.84
+## 115 1999          PIB    37318.96
+## 116 2000          PIB    37726.41
+## 117 2001          PIB    39241.36
+## 118 2002          PIB    40848.99
+## 119 2003          PIB    41961.26
+## 120 2004          PIB    45406.71
+## 121 2005          PIB    47809.32
+## 122 2006          PIB    49914.61
+## 123 2007          PIB    51007.78
+## 124 2008          PIB    54250.41
+## 125 2009          PIB    54557.73
+## 126 2010          PIB    56481.06
+## 127 2011          PIB    60925.06
+## 128 2012          PIB    64362.43
+## 129 2013          PIB    67546.13
+## 130 2014          PIB    70105.36
+## 131 2015          PIB    70174.68
+## 132 2016          PIB    69314.07
+## 133 2017          PIB    70955.69
+```
+
+```r
+# ** Eval va a evaluar y buscar los elementos, primero en el entorno de la función
+#    luego fuera de ella en el entorno global
+```
+
+
+```r
+gather_mod(barras_data,
+           str_subset(names(barras_data),"ear$"))
+```
+
+
+---
+
+# Generación del gráfico con ggplot2
+
+A lo largo del camino que he recorrido en el uso de R, lo que me ha llamado la atención es la versatilidad que tiene la grámatica para las distintas formas en que una persona puede llegar a concebir un objeto, como bien he hecho enfasis, este es un lenguaje que rompe con barreras. La misma versatilidad se aplica en la interfaz gráfica `ggplot2`:
+
+&lt;img src="documento_clase_10_files/figure-html/unnamed-chunk-5-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+
+Para llegar a hacer este gráfico se debe tener en consideración como fue creado el paquete `ggplot2`. La idea de ver un gráfico como un conjunto de **capas** está dado por "La grámatico de los gráficos", una sintaxis intuitiva donde lo que importa es declarar los argumentos considerando cada tipo de gráfico. En este caso en específico estamos hablando de un gráfico de barras. Entonces, en ggplot las capaz a considerarse son:
+
+- El gráfico como tal [1]
+- Los ejes [2]
+- El relleno [3]
+- Las leyendas [4]
+- El fondo del gráfico [5]
+
+En la idea de `ggplot2` los principales argumentos se declaran dentro de una función `aes`. 
+
+---
+
+
+```r
+library(scales)
+library(viridis)
+
+p &lt;- gather_mod(barras_data, "Year") %&gt;% 
+  filter(variable != "Total") %&gt;%     # Quito las columnas que no deseo 
+  ggplot(aes(x = Year,                #&lt;&lt; La función "aes" va a tomar los  
+             y = valor,               #&lt;&lt; argumentos dependiendo del   
+             fill = variable          #&lt;&lt; gráfico  
+             )
+         )+
+  geom_col()                          #&lt;&lt; Elijo el tipo  
+
+
+p #&lt;&lt; [1]
+```
+
+&lt;img src="documento_clase_10_files/figure-html/unnamed-chunk-6-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+
+Ahora es hora de darle formato al gráfico usando la idea de las capas:
+
+
+```r
+p &lt;- p +
+  scale_y_continuous(labels = dollar) +       #&lt;&lt; [2]
+  scale_fill_viridis_d() +                    #&lt;&lt; [3]
+  labs(title = "Descomposición del Total",    #&lt;&lt; [4] 
+       subtitle = "Periodicidad: Anual" ,
+       caption = "Elaborado por: Eric Blair",
+       x = "Años",
+       y = "Miles USD",
+       fill = "Componente")+
+  theme_light()                                #&lt;&lt; [5]
+
+
+p
+```
+
+&lt;img src="documento_clase_10_files/figure-html/unnamed-chunk-7-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+
+Es hora de guardar nuestro gráfico:
+
+
+```r
+png("gráfico_barras_stack.png",res = 250,units = "in",width = 9,height = 6)
+
+print(p)
+
+dev.off()
+```
+
+---
+
+# El mismo gráfico pero con porcentaje en el eje y:
+
+La variante de este gráfico esta dada en la capa [1], es decir en el gráfico como tal:
+
+
+```r
+q &lt;- gather_mod(barras_data, "Year") %&gt;% 
+  filter(variable != "Total") %&gt;%     # Quito las columnas que no deseo 
+  ggplot(aes(x = Year,                #&lt;&lt; La función "aes" va a tomar los  
+             y = valor,               #&lt;&lt; argumentos dependiendo del   
+             fill = variable          #&lt;&lt; gráfico  
+             )
+         )+
+  geom_bar(stat  = "identity",position = "fill")                          #&lt;&lt; Elijo el tipo  
+
+
+q #&lt;&lt; [1]
+```
+
+&lt;img src="documento_clase_10_files/figure-html/unnamed-chunk-9-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+
+Ahora tambien debemos cambiar los titulos en los ejeS:
+
+
+```r
+q &lt;- q +
+  scale_y_continuous(labels = percent) +       #&lt;&lt; [2]
+  scale_fill_viridis_d() +                    #&lt;&lt; [3]
+  labs(title = "Porcentajes",    #&lt;&lt; [4] 
+       subtitle = "Periodicidad: Anual" ,
+       caption = "Elaborado por: Eric Blair",
+       x = "Años",
+       y = "Porcentaje",
+       fill = "Componente")+
+  theme_light()                                #&lt;&lt; [5]
+
+q
+```
+
+&lt;img src="documento_clase_10_files/figure-html/unnamed-chunk-10-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+
+Y guardamos:
+
+
+```r
+png("acumulado.png",res = 250,units = "in",width = 9,height = 6)
+
+print(q)
+
+dev.off()
+```
+
+---
+
+Ahora vamos a juntar los dos gráficos:
+
+
+```r
+library(ggpubr)
+
+
+join_plot &lt;- ggarrange(p,q,labels = c("A","B"),nrow = 1)
+
+join_plot
+```
+
+&lt;img src="documento_clase_10_files/figure-html/unnamed-chunk-12-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+
+Guardamos el plot conjunto:
+  
+
+```r
+png("join_plot.png",res = 250,units = "in",width = 15,height = 8)
+
+print(join_plot)
+
+dev.off()
+```
+
+---
+class: inverse, center, middle
+
+# GRACIAS
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
