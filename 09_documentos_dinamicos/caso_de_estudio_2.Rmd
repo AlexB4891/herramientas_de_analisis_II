@@ -1,0 +1,227 @@
+---
+title: "Caso de estudio modificado"
+author: "Alex Bajaña"
+date: "28/7/2020"
+runtime: shiny
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    toc_depth: 5
+---
+
+```{r setup, include=FALSE, message=FALSE}
+
+# Opciones generales para todos los chunks 
+
+knitr::opts_chunk$set(echo = TRUE, 
+                      message = FALSE,
+                      warning = FALSE,
+                      error = FALSE)
+
+library(tidyverse)
+library(gt)
+library(shiny)
+```
+
+# Análisis exploratorio de una base datos
+
+## **Caso:** SAIKU SRI (2014-2016) 
+
+Lectura de los datos:
+
+```{r lectura}
+
+tabla <- read_csv("datos/saiku-export.csv")
+
+# rm(tablas)
+```
+
+### Preparación de los datos:
+
+Renombrar la tabla:
+
+```{r renombrar}
+nuevos <- c("activ","provin","tipo_c","grupo_e",
+                  "gran_c","clase","anio","mes","estado",
+                  "compras_t","ventas_t","impuesto_c")
+
+originales <- names(tabla)
+
+tabla <- tabla %>% 
+  rename_all(~nuevos)
+
+
+tabla_equivalencias <- tibble(`Nombres originales` = originales,
+       `Nuevos nombres` = nuevos) %>% 
+  mutate(`Nombres originales` = str_to_sentence(`Nombres originales`))
+
+
+tabla_equivalencias <- tabla_equivalencias %>% 
+  gt() %>% 
+  tab_header(title = "Equivalencia de nombres para el estudio",
+             subtitle = md("**Base datos:** Saiku SRI")) %>% 
+  tab_source_note(
+    source_note = "La base datos se ha extraido para los años 204 a 2016"
+    )
+
+tabla_equivalencias
+
+```
+
+Creo los vectores de región:
+
+```{r regiones}
+provincias <- unique(tabla$provin)
+
+sierra <- provincias[c(1,2,3,6,10,14,15,16,17,20)]
+costa <- provincias[c(4,5,7,8,11,12,18)]
+oriente <- provincias[c(9,13,21,22,23,24)]
+insular <- provincias[19]
+```
+
+Operaciones:
+
+* Asigno el formato `Date` a la fecha:
+* Creo la variable `region` con los vectores antes creados
+
+```{r modificaciones}
+tabla <- tabla  %>% 
+  mutate(fecha = str_c(anio,"-",mes,"-01"), 
+         fecha = as.Date(fecha),
+         region = case_when(provin %in% sierra ~ "Sierra",
+                              provin %in% costa ~ "Costa",
+                              provin %in% oriente ~ "Oriente",
+                              TRUE               ~ "Insular"  
+         ))
+```
+
+> Función `mutate_at`, se usa cuando sobre varias variables queremos aplciar la misma función u operación
+
+```{r modificaciones_2}
+# Una sentencia por cada variable, ummm poco eficiente:
+
+tabla2 <- tabla %>% 
+  mutate(provin = factor(provin),
+         tipo_c = factor(tipo_c),
+         grupo_e = factor(grupo_e),
+         gran_c = factor(gran_c),
+         clase = factor(clase),
+         estado = factor(estado), 
+         region = factor(region))
+```
+
+Para pasar la funcion siempre dentro de `list()`, luego `~` indica que `.` va a ser cada una de las variables
+
+```{r modificaciones_3}
+tabla <- tabla %>%
+  mutate_at(.vars = c("provin",
+                      "tipo_c",
+                      "grupo_e",
+                      "gran_c",
+                      "clase",
+                      "estado",
+                      "region"),
+            .funs = list(~factor(.)) 
+            )
+
+# Equivale a:
+
+tabla <- tabla %>%
+  mutate_at(.vars = c("provin",
+                      "tipo_c",
+                      "grupo_e",
+                      "gran_c",
+                      "clase",
+                      "estado",
+                      "region"),
+            .funs = function(var)factor(var)
+            )
+```
+
+### Exploración
+
+> La función `pull` hace las veces de `[[]]` y viene del paquete `dplyr`
+
+```{r ejemplo_1, eval = FALSE}
+# Saco como **vectores**
+tabla %>% pull(fecha)
+
+tabla[["fecha"]]
+
+# Saco como tabla:
+tabla[,"fecha"]
+
+tabla %>% select(fecha)
+```
+
+> La función `enframe` crea una tabla a partir de un vector nombrado como los que nos devuelve la funci+on `summary`
+
+```{r ejemplo_2}
+tabla %>% 
+  pull(compras_t) %>% # Extraigo la variable
+  summary %>%         # genero el resumen
+  enframe %>%         # convierto a tabla
+  gt()                #le doy formato
+
+```
+
+Resumen por variable:
+
+```{r exploracion}
+
+originales <- str_to_sentence(originales)
+
+originales <- c(originales,"Fecha","Región")
+
+nombres_choices <- set_names(x = names(tabla),nm = originales)
+
+selectInput(inputId = "variable",
+            label = "Selecciona la variable para resumen:",
+            choices = nombres_choices)
+```
+
+Output de el resumen por variable:
+
+```{r}
+renderTable({
+  tabla %>% 
+  pull(input$variable) %>% # Extraigo la variable
+  summary %>%         # genero el resumen
+  enframe 
+})
+```
+
+Plot de variable numéricas:
+
+> La función `select_if` selecciona las columnas que cumplen una determinado condicion.
+
+> La función `str_subset` extrae los valores de un vector que cumplen una condición. `|` signifíca `o` en expresiones regulares
+
+```{r}
+tabla_num <- tabla %>% select_if(is.numeric) %>% select(-anio,-mes)
+
+var_num <- str_to_sentence(originales) %>% 
+  str_subset("compras|ventas|causado")
+
+
+nombres_choices_num <- set_names(x = names(tabla_num),nm = var_num)
+
+selectInput(inputId = "variable_numerica",
+            label = "Selecciona la variable para el histograma:",
+            choices = nombres_choices_num)
+
+
+```
+Output gráfico:
+
+> la función `hist` dibuja un histograma tomando un vector:
+
+```{r}
+
+renderPlot({
+  tabla_num %>% pull(input$variable_numerica) %>% hist
+})
+
+```
+
