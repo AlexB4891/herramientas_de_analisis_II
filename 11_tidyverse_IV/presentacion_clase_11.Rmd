@@ -1,0 +1,282 @@
+---
+title: "Curso herramientas de análisis con R"
+subtitle: "Clase 12: ggplot2::presentacion()"
+author: "Alex Bajaña"
+institute: "infoRmal"
+date: "2020/08/03 (Actualizado: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+class: inverse, middle, center
+
+# ggplot2
+
+---
+
+#Paquetes que emplearemos en esta clase:
+
+```{r setup,message=FALSE}
+library(tidyverse)
+library(knitr)
+library(lubridate)
+```
+
+- El paquetre <font color = '#d7215b'> knitr </font> provee funciones para realizar tablas con formato elegante.
+- El paquetre <font color = '#d7215b'> lubridate </font> provee funciones para manejar eficientemente fechas sin importar el formato.
+
+---
+
+# Simulamos una base de datos
+
+```{r}
+set.seed(1984)
+
+datos_sim <- tibble(
+  id = sample(str_c("ID-",1:100),1000,replace = T),
+  anio = sample(1936:1970,1000,replace = T),
+  mes = sample(1:12,1000,replace = T),
+  dia = sample(1:31,1000,replace = T),
+  sexo = sample(c("Mujer","Hombre"),1000,replace = T),
+  g_edad = sample(c("Joven","Adulto","Anciano"),1000,replace = T),
+  valor = rpois(1000,300),
+  ahorro = rpois(1000,100)
+) 
+
+```
+
+En esta ocasión se simulará datos de compras y ahorro diario para 100 personas distintas durante los años 1936 y 1970. Los valores de compras vienen dados por una distribución Poisson con lambda 300 y el ahorro con un lambda de 100.
+---
+
+## Diccionario de variables:
+
+```{r, echo=FALSE}
+
+tibble(Variables = names(datos_sim),
+       `Descripción` = c("Identificador de la persona",
+                         "Año de la compra",
+                         "Mes de la compra",
+                         "Día de la compra",
+                         "Sexo del comprador",
+                         "Grupo etario",
+                         "Valor de la compra",
+                         "Ahorro")) %>% 
+  kable(.,"html")
+
+```
+
+En primer lugar vamos a crear una varible que indique la fecha de compra y ahorro. Para:
+
+1. Evaluar las funciones del paquete `lubridate`
+2. Generar un gráfico de linea con `ggplot2`
+---
+
+## Argumentos
+
+Tabla:
+
+```{r, eval=FALSE}
+tabla %>%         #<<
+  ggplot() + geom_{{tipo}}({{aes}}) 
+```
+
+Mapping:
+
+```{r, eval=FALSE}
+tabla %>% ggplot() + 
+  geom_{{tipo}}( #<<
+    {{aes}}) 
+```
+
+Aesthetic:
+
+```{r, eval=FALSE}
+tabla %>% ggplot() + geom_{{tipo}}( 
+    {{aes}}   #<<
+    ) 
+```
+
+...: Otros argumentos:
+
+```{r, eval=FALSE}
+tabla %>% ggplot() + geom_{{tipo}}( {{aes}},
+                                    ...) #<<
+```
+---
+
+## Nube de puntos
+
+Grafico básico:
+
+```{r,fig.height=4,fig.align='center',fig.width=6}
+ggplot(data = datos_sim) +
+  geom_point(
+    mapping = aes(x = valor, #<<
+                  y = ahorro #<<
+                  )          #<<
+    )
+```
+
+---
+class: inverse, middle, center
+
+# Personalización
+
+Añadir **color**, **size**, **alpha**, y **shape** en el aesthetic para hacer más bonito el gráfico.  
+
+.pull-left[
+### Shape:
+![](https://www.datanovia.com/en/wp-content/uploads/dn-tutorials/ggplot2/figures/030-ggplot-point-shapes-r-pch-list-showing-different-point-shapes-in-rstudio-1.png)
+
+]
+
+.pull-right[
+.left[
+- `size`: Puede ser:
+  - Un valor entero si deseo que todos los puntos tengan el mismo tamaño
+  - Una variable numérica que determine el tamaño del punto
+- `color:` Puede ser:
+  - Un string con el nombre del color (en inglés)
+  - Colores HTML (Ejemplo: '#d7215b')
+- `alpha:` Valor entre 0 (transparente) y 1 (solido)
+
+]
+]
+
+
+---
+### Dando formato al gráfico
+
+```{r}
+plot <- mpg %>% 
+  ggplot() + 
+  geom_point(aes(x = displ, 
+                 y = hwy,
+                 color = "red"),
+             size = 4,           #<<     
+             shape = 5,          #<<
+             alpha = 0.5,        #<<
+             show.legend = T) +  #<<
+  geom_smooth(
+    aes(x = displ,               #<<
+        y = hwy),                #<<
+    color = "blue",              #<<
+    show.legend = T) +
+  labs(title  = "Gráfico bonito",
+       caption = "Elaborado por: Eric Blair",
+       color = "Variable") +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+---
+class: inverse, middle, center
+
+# Gráfico personalizado
+
+```{r,fig.height=5,fig.align='center',fig.width=7}
+plot
+```
+
+---
+
+## Lubridate
+
+Manejar más rapido y fácil las fechas:
+
+```{r}
+
+datos_sim <- datos_sim %>% 
+  mutate(fecha_1 = str_c(anio,mes,dia),
+         fecha_2 = str_c(anio,"-",mes,"-",dia ),
+         fecha_3 = str_c(mes,"/",dia,"/",anio ),
+         fecha_4 = str_c(dia,"/",mes,"/",anio ))
+```
+
+```{r, echo=FALSE}
+datos_sim %>% 
+  select(id,matches("fecha")) %>% 
+  head(5) %>% kable("html")
+```
+
+---
+
+# Variantes:
+
+Año, mes, día, el string no tiene separador, revisar las fechas con NA.
+
+```{r}
+ymd(datos_sim$fecha_1) %>% head
+```
+
+Año, mes, día, el string tiene separador
+
+```{r}
+ymd(datos_sim$fecha_2) %>% head
+```
+
+---
+Mes día año
+
+```{r}
+
+mdy(datos_sim$fecha_3) %>% head
+
+```
+
+Día mes año
+
+```{r}
+
+dmy(datos_sim$fecha_3) %>% head
+
+```
+
+---
+
+## Series de tiempo
+
+```{r}
+
+plot_2 <- datos_sim %>% 
+  mutate(fecha_2 = ymd(fecha_2)) %>% 
+  ggplot()+
+  geom_line(aes(x = fecha_2,y=valor,color = sexo))+
+  geom_smooth(aes(x = fecha_2,y=valor,color = sexo))+
+  facet_grid(sexo~g_edad) # filas ~ columnas
+
+```
+
+```{r}
+
+plot_2 <- datos_sim %>%
+  group_by(fecha_2,sexo,g_edad) %>% 
+  summarise(valor = sum(valor) ) %>%
+  ungroup %>% 
+  mutate(fecha_2 = ymd(fecha_2)) %>% 
+  ggplot()+
+  geom_line(aes(x = fecha_2,
+                y=valor,
+                color = sexo))+
+  geom_smooth(aes(x = fecha_2,
+                  y=valor,
+                  color = sexo))+
+  facet_grid(sexo~g_edad) # filas ~ columnas
+
+```
+---
+
+```{r, fig.height=6,fig.align='center',fig.width=9}
+plot_2
+```
+
+---
+
+class: inverse, center, middle
+
+# Gracias
