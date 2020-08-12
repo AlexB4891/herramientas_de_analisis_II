@@ -1,0 +1,283 @@
+---
+title: "Curso herramientas de análisis con R"
+subtitle: "Clase 14: Abrir, plotear, guardar"
+author: "Alex Bajaña"
+institute: "infoRmal"
+date: "2016/12/12 (Actualizado: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+
+library(knitr)
+library(tidyverse)
+library(sp)
+library(scales)
+
+hook_output <- knit_hooks$get("output")
+knit_hooks$set(output = function(x, options) {
+  lines <- options$output.lines
+  if (is.null(lines)) {
+    return(hook_output(x, options))  # pass to default hook
+  }
+  x <- unlist(strsplit(x, "\n"))
+  more <- "..."
+  if (length(lines)==1) {        # first n lines
+    if (length(x) > lines) {
+      # truncate the output, but add ....
+      x <- c(head(x, lines), more)
+    }
+  } else {
+    x <- c(more, x[lines], more)
+  }
+  # paste these lines together
+  x <- paste(c(x, ""), collapse = "\n")
+  hook_output(x, options)
+})
+
+
+
+```
+
+class: inverse, middle, center
+
+# r::readr
+---
+
+# Apertura de datos
+
+En esta ocasión vamos a abrir distintos formatos de archivos con **readr** del paquete tidyverse
+
+### Archivos delimitados 
+
+```{r}
+parte_1 <- read_delim("delim_t_1.txt",delim = "\t") # Separador: tab
+```
+
+### Archivos RDS
+
+```{r}
+parte_2 <- read_rds("delim_t_2.rds")
+```
+
+---<
+
+### Environments (RData)
+
+```{r}
+load("to_join.RData")
+```
+
+# Unimos las partes:
+
+## Por filas:
+
+```{r}
+tabla <- rbind(parte_1,parte_2)
+```
+
+## Por columnas:
+
+```{r}
+tabla <- cbind(tabla,to_join)
+```
+
+---
+
+# Abrimos y exploramos el shapefile
+
+El archivo contiene un shapefile simplificado a partir del mapa publicado por el INEC.
+
+```{r, output.lines=1:10}
+mapa_ec <- read_rds("nxprovincias_simp.rds")
+
+glimpse(mapa_ec)
+```
+
+---
+
+# Centroides
+
+A partir del shapefile simplificado se calcularon los centroides de cada polígono
+
+
+```{r}
+
+centroides <- read_rds("centroides.rds")
+
+glimpse(centroides)
+```
+
+---
+
+# Generación del mapa:
+
+Primero debemos llevar el `PolygonDataFrame` a un `Data.Frame` tradicional
+
+```{r, fig.width=4,fig.height=4}
+mapa_ec <- fortify(mapa_ec)
+centroides <- cbind(centroides@data,centroides@coords) %>% 
+  mutate(DPA_DESPRO = if_else(is.na(DPA_DESPRO),"CAÑAR",as.character(DPA_DESPRO)))
+```
+
+# geom_polygon()
+
+```{r, eval = FALSE}
+mapa_df %>%
+    ggplot(aes(x ,          # Longitud
+               y ,          # Latitud
+               group )) +   # Grupos (id de provincia, canton, etc)
+    geom_polygon()
+```
+---
+
+# Mapa sin chiste
+
+```{r, fig.width=6,fig.height=4, fig.align='center'}
+mapa_simple <-  mapa_ec %>%
+    ggplot( aes_string(x = "long", y = "lat", group = "group")) +
+    geom_polygon(color = 'gray',  # Color de linea
+                 size = 0.1)      # Tamaño de la linea
+
+mapa_simple
+```
+
+---
+
+# geom_text()
+
+```{r, eval=FALSE}
+texto_df %>% 
+geom_text(texto_df,
+              aes(
+                x,         # Posición en X
+                y,         # Posición en Y
+                label,     # Texto 
+              ))
+```
+
+
+# Mapa con etiquetas
+
+```{r}
+mapa_mod <-  mapa_simple +
+    geom_text(data = centroides, 
+              aes(
+                x = x,
+                y = y,
+                group = DPA_DESPRO,   #<<
+                label = DPA_DESPRO),  #<<
+              color = "gray",size = 2)   
+```
+
+---
+
+```{r,fig.width=10,fig.height=6, fig.align='center', message=FALSE, warning=FALSE}
+mapa_mod +
+  theme_minimal()+
+    theme(axis.text.x = element_blank(),  # Remuevo texto en ejes
+          axis.text.y = element_blank(),  
+          axis.title.x = element_blank(), # Remuevo titulos de ejes
+          axis.title.y = element_blank()
+    )
+```
+
+---
+
+class: inverse, center, middle
+
+# Coroplético
+
+---
+
+Primero extraigo los identificadores de provincia
+
+```{r}
+equivalencia <- tibble(provin_id = mapa_ec$id %>% unique,
+       provin = centroides$DPA_DESPRO %>% unique)
+```
+
+Genero mi tabla de valores:
+
+```{r}
+valores <- tabla %>% 
+  filter(anio == 2016) %>% 
+  group_by(provin) %>% 
+  summarise(total_v = sum(ventas_t)) 
+```
+
+### ..._join()
+```{r, eval =FALSE}
+left_join(x, y, by = NULL, … ) #<<
+```
+
+
+Junto mis coordenadas con mis valores:
+
+```{r}
+ventas_sf <- valores %>% 
+  left_join(equivalencia) %>% 
+  right_join(mapa_ec, by = c("provin_id" = "id"))
+
+```
+
+---
+# Finalmente:
+
+```{r}
+plot_final <- ventas_sf %>%
+    ggplot( aes_string(x = "long", y = "lat", group = "group")) +
+    geom_polygon(aes(fill = total_v),  # Aqui declaro mi variable de relleno
+                 color = 'gray',size = 0.1) + 
+    geom_text(data = centroides, 
+              aes( x = x, y = y,
+                group = DPA_DESPRO,   #<<
+                label = DPA_DESPRO),  #<<
+              color = "gray",size = 2) +
+  labs(fill = "Total Ventas",
+       title = "Total de ventas en 2016",
+       subtitle = "Agregado provincial",
+       caption = "Elaborado por: Jesucristo García")+
+  scale_fill_gradient(high ="#d7215b",low = "#2134d7", labels = dollar)+
+  theme_minimal()+
+    theme(axis.text.x = element_blank(),  # Remuevo texto en ejes
+          axis.text.y = element_blank(),  
+          axis.title.x = element_blank(), # Remuevo titulos de ejes
+          axis.title.y = element_blank()
+    )
+```
+
+---
+
+```{r,fig.width=13,fig.height=8, fig.align='center', message=FALSE, warning=FALSE}
+plot_final
+```
+
+---
+
+background-image: url(les_toca.png)
+---
+
+# Tarea: 
+
+1. Encontrar el total del impuesto causado para las empresas en estado activo que no pertenecen a un grupo económico en el año 2017 en la provincia de Zamora Chinchipe
+
+2. Gráficar el mapa con todos lo aprendido en la clase
+
+
+
+---
+
+class: inverse, center, middle
+
+# Gracias
+
+![](https://media.tenor.com/images/69c3991a342d175dd52a618f41ea8361/tenor.gif)
+

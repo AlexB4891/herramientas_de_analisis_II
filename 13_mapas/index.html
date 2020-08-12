@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Curso herramientas de análisis con R</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Alex Bajaña" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Curso herramientas de análisis con R
+## Clase 14: Abrir, plotear, guardar
+### Alex Bajaña
+### infoRmal
+### 2016/12/12 (Actualizado: 2020-08-12)
+
+---
+
+
+
+
+class: inverse, middle, center
+
+# r::readr
+---
+
+# Apertura de datos
+
+En esta ocasión vamos a abrir distintos formatos de archivos con **readr** del paquete tidyverse
+
+### Archivos delimitados 
+
+
+```r
+parte_1 &lt;- read_delim("delim_t_1.txt",delim = "\t") # Separador: tab
+```
+
+```
+## Parsed with column specification:
+## cols(
+##   activ = col_character(),
+##   provin = col_character(),
+##   anio = col_double()
+## )
+```
+
+### Archivos RDS
+
+
+```r
+parte_2 &lt;- read_rds("delim_t_2.rds")
+```
+
+---&lt;
+
+### Environments (RData)
+
+
+```r
+load("to_join.RData")
+```
+
+# Unimos las partes:
+
+## Por filas:
+
+
+```r
+tabla &lt;- rbind(parte_1,parte_2)
+```
+
+## Por columnas:
+
+
+```r
+tabla &lt;- cbind(tabla,to_join)
+```
+
+---
+
+# Abrimos y exploramos el shapefile
+
+El archivo contiene un shapefile simplificado a partir del mapa publicado por el INEC.
+
+
+```r
+mapa_ec &lt;- read_rds("nxprovincias_simp.rds")
+
+glimpse(mapa_ec)
+```
+
+```
+...
+## Formal class 'SpatialPolygonsDataFrame' [package "sp"] with 5 slots
+##   ..@ data       :'data.frame':	25 obs. of  7 variables:
+##   .. ..$ DPA_PROVIN: Factor w/ 25 levels "01","02","03",..: 1 2 3 4 5 6 7 8 9 10 ...
+##   .. ..$ DPA_DESPRO: Factor w/ 25 levels "AZUAY","BOLIVAR",..: 1 2 NA 4 6 5 7 8 10 11 ...
+##   .. ..$ DPA_VALOR : int [1:25] 0 0 0 0 0 0 0 0 0 0 ...
+##   .. ..$ DPA_ANIO  : Factor w/ 1 level "2012": 1 1 1 1 1 1 1 1 1 1 ...
+##   .. ..$ REI_CODIGO: Factor w/ 5 levels "02","03","04",..: 4 1 4 3 1 1 2 3 2 3 ...
+##   .. ..$ REN_CODIGO: Factor w/ 5 levels "01","02","03",..: 1 1 1 1 1 1 2 2 2 1 ...
+##   .. ..$ PEE_CODIGO: Factor w/ 1 level "593": 1 1 1 1 1 1 1 1 1 1 ...
+##   ..@ polygons   :List of 25
+...
+```
+
+---
+
+# Centroides
+
+A partir del shapefile simplificado se calcularon los centroides de cada polígono
+
+
+
+```r
+centroides &lt;- read_rds("centroides.rds")
+
+glimpse(centroides)
+```
+
+```
+## Formal class 'SpatialPointsDataFrame' [package "sp"] with 5 slots
+##   ..@ data       :'data.frame':	25 obs. of  7 variables:
+##   .. ..$ DPA_PROVIN: Factor w/ 25 levels "01","02","03",..: 1 2 3 4 5 6 7 8 9 10 ...
+##   .. ..$ DPA_DESPRO: Factor w/ 25 levels "AZUAY","BOLIVAR",..: 1 2 NA 4 6 5 7 8 10 11 ...
+##   .. ..$ DPA_VALOR : int [1:25] 0 0 0 0 0 0 0 0 0 0 ...
+##   .. ..$ DPA_ANIO  : Factor w/ 1 level "2012": 1 1 1 1 1 1 1 1 1 1 ...
+##   .. ..$ REI_CODIGO: Factor w/ 5 levels "02","03","04",..: 4 1 4 3 1 1 2 3 2 3 ...
+##   .. ..$ REN_CODIGO: Factor w/ 5 levels "01","02","03",..: 1 1 1 1 1 1 2 2 2 1 ...
+##   .. ..$ PEE_CODIGO: Factor w/ 1 level "593": 1 1 1 1 1 1 1 1 1 1 ...
+##   ..@ coords.nrs : num(0) 
+##   ..@ coords     : num [1:25, 1:2] -79.2 -79.1 -79 -78.1 -78.9 ...
+##   .. ..- attr(*, "dimnames")=List of 2
+##   ..@ bbox       : num [1:2, 1:2] -90.936 -4.166 -76.376 0.766
+##   .. ..- attr(*, "dimnames")=List of 2
+##   ..@ proj4string:Formal class 'CRS' [package "sp"] with 1 slot
+```
+
+---
+
+# Generación del mapa:
+
+Primero debemos llevar el `PolygonDataFrame` a un `Data.Frame` tradicional
+
+
+```r
+mapa_ec &lt;- fortify(mapa_ec)
+```
+
+```
+## Regions defined for each Polygons
+```
+
+```r
+centroides &lt;- cbind(centroides@data,centroides@coords) %&gt;% 
+  mutate(DPA_DESPRO = if_else(is.na(DPA_DESPRO),"CAÑAR",as.character(DPA_DESPRO)))
+```
+
+# geom_polygon()
+
+
+```r
+mapa_df %&gt;%
+    ggplot(aes(x ,          # Longitud
+               y ,          # Latitud
+               group )) +   # Grupos (id de provincia, canton, etc)
+    geom_polygon()
+```
+---
+
+# Mapa sin chiste
+
+
+```r
+mapa_simple &lt;-  mapa_ec %&gt;%
+    ggplot( aes_string(x = "long", y = "lat", group = "group")) +
+    geom_polygon(color = 'gray',  # Color de linea
+                 size = 0.1)      # Tamaño de la linea
+
+mapa_simple
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-10-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+
+# geom_text()
+
+
+```r
+texto_df %&gt;% 
+geom_text(texto_df,
+              aes(
+                x,         # Posición en X
+                y,         # Posición en Y
+                label,     # Texto 
+              ))
+```
+
+
+# Mapa con etiquetas
+
+
+```r
+mapa_mod &lt;-  mapa_simple +
+    geom_text(data = centroides, 
+              aes(
+                x = x,
+                y = y,
+*               group = DPA_DESPRO,
+*               label = DPA_DESPRO),
+              color = "gray",size = 2)   
+```
+
+---
+
+
+```r
+mapa_mod +
+  theme_minimal()+
+    theme(axis.text.x = element_blank(),  # Remuevo texto en ejes
+          axis.text.y = element_blank(),  
+          axis.title.x = element_blank(), # Remuevo titulos de ejes
+          axis.title.y = element_blank()
+    )
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-13-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+
+class: inverse, center, middle
+
+# Coroplético
+
+---
+
+Primero extraigo los identificadores de provincia
+
+
+```r
+equivalencia &lt;- tibble(provin_id = mapa_ec$id %&gt;% unique,
+       provin = centroides$DPA_DESPRO %&gt;% unique)
+```
+
+Genero mi tabla de valores:
+
+
+```r
+valores &lt;- tabla %&gt;% 
+  filter(anio == 2016) %&gt;% 
+  group_by(provin) %&gt;% 
+  summarise(total_v = sum(ventas_t)) 
+```
+
+```
+## `summarise()` ungrouping output (override with `.groups` argument)
+```
+
+### ..._join()
+
+```r
+*left_join(x, y, by = NULL, … )
+```
+
+
+Junto mis coordenadas con mis valores:
+
+
+```r
+ventas_sf &lt;- valores %&gt;% 
+  left_join(equivalencia) %&gt;% 
+  right_join(mapa_ec, by = c("provin_id" = "id"))
+```
+
+```
+## Joining, by = "provin"
+```
+
+---
+# Finalmente:
+
+
+```r
+plot_final &lt;- ventas_sf %&gt;%
+    ggplot( aes_string(x = "long", y = "lat", group = "group")) +
+    geom_polygon(aes(fill = total_v),  # Aqui declaro mi variable de relleno
+                 color = 'gray',size = 0.1) + 
+    geom_text(data = centroides, 
+              aes( x = x, y = y,
+*               group = DPA_DESPRO,
+*               label = DPA_DESPRO),
+              color = "gray",size = 2) +
+  labs(fill = "Total Ventas",
+       title = "Total de ventas en 2016",
+       subtitle = "Agregado provincial",
+       caption = "Elaborado por: Jesucristo García")+
+  scale_fill_gradient(high ="#d7215b",low = "#2134d7", labels = dollar)+
+  theme_minimal()+
+    theme(axis.text.x = element_blank(),  # Remuevo texto en ejes
+          axis.text.y = element_blank(),  
+          axis.title.x = element_blank(), # Remuevo titulos de ejes
+          axis.title.y = element_blank()
+    )
+```
+
+---
+
+
+```r
+plot_final
+```
+
+&lt;img src="index_files/figure-html/unnamed-chunk-19-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+
+background-image: url(les_toca.png)
+---
+
+# Tarea: 
+
+1. Encontrar el total del impuesto causado para las empresas en estado activo que no pertenecen a un grupo económico en el año 2017 en la provincia de Zamora Chinchipe
+
+2. Gráficar el mapa con todos lo aprendido en la clase
+
+
+
+---
+
+class: inverse, center, middle
+
+# Gracias
+
+![](https://media.tenor.com/images/69c3991a342d175dd52a618f41ea8361/tenor.gif)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
