@@ -1,0 +1,217 @@
+---
+title: "Ejemplo de navegacion de variables en un mapa"
+author: "Alex Bajaña"
+date: "12/8/2020"
+runtime: shiny
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+    toc_depth: 5
+---
+
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+
+library(knitr)
+library(tidyverse)
+library(sp)
+library(scales)
+library(shiny)
+
+```
+
+class: inverse, middle, center
+
+# r::readr
+---
+
+# Apertura de datos
+
+En esta ocasión vamos a abrir distintos formatos de archivos con **readr** del paquete tidyverse
+
+### Archivos delimitados 
+
+```{r}
+parte_1 <- read_delim("delim_t_1.txt",delim = "\t") # Separador: tab
+```
+
+### Archivos RDS
+
+```{r}
+parte_2 <- read_rds("delim_t_2.rds")
+```
+
+---<
+
+### Environments (RData)
+
+```{r}
+load("to_join.RData")
+```
+
+# Unimos las partes:
+
+## Por filas:
+
+```{r}
+tabla <- rbind(parte_1,parte_2)
+```
+
+## Por columnas:
+
+```{r}
+tabla <- cbind(tabla,to_join)
+```
+
+---
+
+# Abrimos y exploramos el shapefile
+
+El archivo contiene un shapefile simplificado a partir del mapa publicado por el INEC.
+
+```{r, output.lines=1:10}
+mapa_ec <- read_rds("nxprovincias_simp.rds")
+
+glimpse(mapa_ec)
+```
+
+---
+
+# Centroides
+
+A partir del shapefile simplificado se calcularon los centroides de cada polígono
+
+
+```{r}
+
+centroides <- read_rds("centroides.rds")
+
+glimpse(centroides)
+```
+
+---
+
+# Generación del mapa:
+
+Primero debemos llevar el `PolygonDataFrame` a un `Data.Frame` tradicional
+
+```{r, fig.width=4,fig.height=4}
+mapa_ec <- fortify(mapa_ec)
+
+centroides@data
+
+centroides@coords
+
+centroides <- cbind(centroides@data,centroides@coords) %>% 
+  mutate(DPA_DESPRO = if_else(is.na(DPA_DESPRO),"CAÑAR",as.character(DPA_DESPRO)))
+```
+
+
+Primero extraigo los identificadores de provincia
+
+```{r}
+equivalencia <- tibble(provin_id = mapa_ec$id %>% unique,
+       provin = centroides$DPA_DESPRO %>% unique)
+```
+
+# Funcion de filtrado de la base y agrupacion:
+
+```{r}
+
+funcion_resumen <- function(tabla,anio,variable){
+
+valores <- tabla %>% 
+  filter(anio == anio) %>% 
+  group_by(provin) %>% 
+  summarise_at(.vars = variable,.funs = list(resumen = ~ sum(.))) 
+
+return(valores)
+
+}
+
+
+funcion_resumen(tabla = tabla,anio = 2017,variable = "impuesto_c")
+
+
+```
+
+Función para generar el mapa:
+
+```{r}
+
+
+funcion_mapa <- function(valores){
+  
+  resumen_sf <- valores %>% 
+    left_join(equivalencia) %>% 
+    right_join(mapa_ec, by = c("provin_id" = "id"))
+  
+  
+  resumen_sf %>%
+    ggplot( aes(x = long, y = lat, group = group)) +
+    geom_polygon(aes(fill = log(resumen)),  # Aqui declaro mi variable de relleno
+                 color = 'gray',size = 0.1) + 
+    geom_text(data = centroides, 
+              aes( x = x, y = y,
+                group = DPA_DESPRO,   #<<
+                label = DPA_DESPRO),  #<<
+              color = "gray",size = 2) +
+  scale_fill_gradient(high ="#d7215b",low = "#2134d7", labels = dollar)+
+  theme_minimal()+
+    theme(axis.text.x = element_blank(),  # Remuevo texto en ejes
+          axis.text.y = element_blank(),  
+          axis.title.x = element_blank(), # Remuevo titulos de ejes
+          axis.title.y = element_blank()
+    )
+  
+}
+
+funcion_resumen(tabla = tabla,anio = 2017,variable = "impuesto_c") %>% 
+  funcion_mapa()
+
+
+```
+
+# Funcion de etiquetas:
+
+```{r}
+funciton_etiqueta <- function(grafico,titulo,relleno){
+
+grafico +
+  labs(fill = relleno,
+       title = titulo,
+       subtitle = "Agregado provincial",
+       caption = "Elaborado por: Jesucristo García")
+  
+}
+
+funcion_resumen(tabla = tabla,anio = 2017,variable = "impuesto_c") %>% 
+  funcion_mapa() %>% 
+  funciton_etiqueta(titulo = "Impuesto causado",relleno = "Total IC")
+```
+
+```{r}
+
+selectInput(
+  inputId = "variable",
+    
+  label = "Selecciona la variable",
+  
+  choices = c("compras_t","ventas_t","impuesto_c")
+)
+
+textInput(inputId = "titulo",label = "Titulo del gráfico")
+
+textInput(inputId = "relleno",label = "Titulo del relleno")
+
+renderPlot(
+  funcion_resumen(tabla = tabla,anio = 2017,variable = input$variable) %>% 
+  funcion_mapa() %>% 
+    funciton_etiqueta(titulo = input$titulo,relleno = input$relleno)
+)
+
+
+```
+
